@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -41,7 +37,7 @@ import com.dordeorz.kronometre.ui.oem.BatteryOptimizationHelper
 import com.dordeorz.kronometre.ui.theme.KronometreTheme
 
 @Composable
-fun StopwatchScreen(viewModel: StopwatchViewModel, onRunningChanged: (Boolean) -> Unit, onOpenSettings: () -> Unit) {
+fun StopwatchScreen(viewModel: StopwatchViewModel, showCentis: Boolean, onRunningChanged: (Boolean) -> Unit) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val startFailed by viewModel.startFailed.collectAsStateWithLifecycle()
@@ -81,7 +77,7 @@ fun StopwatchScreen(viewModel: StopwatchViewModel, onRunningChanged: (Boolean) -
         onReset = viewModel::reset,
         onDismissError = viewModel::dismissError,
         onOpenNotificationSettings = { BatteryOptimizationHelper.openNotificationSettings(context) },
-        onOpenSettings = onOpenSettings,
+        showCentis = showCentis,
         oemCard = {
             if (!batteryExempt && !oemDismissed) {
                 BatteryOptimizationCard(profile = profile, onDismiss = { oemDismissed = true })
@@ -100,18 +96,13 @@ fun StopwatchContent(
     onReset: () -> Unit,
     onDismissError: () -> Unit,
     onOpenNotificationSettings: () -> Unit,
-    onOpenSettings: () -> Unit,
     oemCard: @Composable () -> Unit,
+    showCentis: Boolean = false,
 ) {
-    Scaffold { padding ->
-        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             val landscape = maxWidth > maxHeight
             Column(modifier = Modifier.fillMaxSize()) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
-                    }
-                }
                 if (!notificationsEnabled) {
                     MessageBanner(
                         message = stringResource(R.string.notifications_disabled),
@@ -132,6 +123,7 @@ fun StopwatchContent(
                     Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                         TimerPanel(
                             state = state,
+                            showCentis = showCentis,
                             timeSp = 60f,
                             onToggle = onToggle,
                             onLap = onLap,
@@ -151,7 +143,7 @@ fun StopwatchContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        TimeDisplay(state = state, modifier = Modifier.fillMaxWidth())
+                        TimeDisplay(state = state, showCentis = showCentis, modifier = Modifier.fillMaxWidth())
                         StatusText(state = state, modifier = Modifier.padding(top = 4.dp))
                     }
                     if (state.laps.isNotEmpty()) {
@@ -173,6 +165,7 @@ fun StopwatchContent(
 @Composable
 private fun TimerPanel(
     state: StopwatchState,
+    showCentis: Boolean,
     timeSp: Float,
     onToggle: () -> Unit,
     onLap: () -> Unit,
@@ -185,7 +178,7 @@ private fun TimerPanel(
         verticalArrangement = Arrangement.SpaceEvenly,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            TimeDisplay(state = state, textSp = timeSp, modifier = Modifier.fillMaxWidth())
+            TimeDisplay(state = state, textSp = timeSp, showCentis = showCentis, modifier = Modifier.fillMaxWidth())
             StatusText(state = state, modifier = Modifier.padding(top = 4.dp))
         }
         ControlRow(state = state, onToggle = onToggle, onLap = onLap, onReset = onReset)
@@ -205,7 +198,6 @@ private fun StopwatchContentPreview() {
             onReset = {},
             onDismissError = {},
             onOpenNotificationSettings = {},
-            onOpenSettings = {},
             oemCard = {},
         )
     }
@@ -224,7 +216,6 @@ private fun StopwatchContentLandscapePreview() {
             onReset = {},
             onDismissError = {},
             onOpenNotificationSettings = {},
-            onOpenSettings = {},
             oemCard = {},
         )
     }
@@ -243,7 +234,6 @@ private fun StopwatchContentDarkPreview() {
             onReset = {},
             onDismissError = {},
             onOpenNotificationSettings = {},
-            onOpenSettings = {},
             oemCard = {},
         )
     }

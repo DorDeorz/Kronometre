@@ -17,6 +17,12 @@ class ScreenDimController(private val window: Window) {
     private var dimmed = false
     private var animator: ValueAnimator? = null
 
+    var enabled = true
+        set(value) {
+            field = value
+            if (value && running) onInteraction() else release()
+        }
+
     val isDimmed: Boolean get() = dimmed || animator != null
 
     fun setRunning(value: Boolean) {
@@ -25,7 +31,7 @@ class ScreenDimController(private val window: Window) {
     }
 
     fun onInteraction(): Boolean {
-        if (!running) return false
+        if (!running || !enabled) return false
         val wasDimmed = isDimmed
         brighten()
         window.decorView.keepScreenOn = true
@@ -49,7 +55,7 @@ class ScreenDimController(private val window: Window) {
     }
 
     private fun dim() {
-        if (!running) return
+        if (!running || !enabled) return
         val anim = ValueAnimator.ofFloat(currentBrightness(), DIM_LEVEL).setDuration(DIM_ANIMATION_MS)
         anim.addUpdateListener { setBrightness(it.animatedValue as Float) }
         anim.addListener(object : AnimatorListenerAdapter() {

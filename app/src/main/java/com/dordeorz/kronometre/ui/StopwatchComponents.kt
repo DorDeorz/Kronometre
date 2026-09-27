@@ -1,6 +1,22 @@
 package com.dordeorz.kronometre.ui
 
 import android.graphics.Typeface
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
+import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.isActive
 import android.os.SystemClock
 import android.text.format.DateUtils
 import android.util.TypedValue
@@ -46,7 +62,16 @@ import com.dordeorz.kronometre.ui.theme.KronometreTheme
 import com.dordeorz.kronometre.ui.theme.actionColors
 
 @Composable
-fun TimeDisplay(state: StopwatchState, modifier: Modifier = Modifier, textSp: Float = TIME_TEXT_SP) {
+fun TimeDisplay(
+    state: StopwatchState,
+    modifier: Modifier = Modifier,
+    textSp: Float = TIME_TEXT_SP,
+    showCentis: Boolean = false,
+) {
+    if (showCentis) {
+        CentisTimeDisplay(state, modifier, textSp)
+        return
+    }
     val color = MaterialTheme.colorScheme.onBackground.toArgb()
     AndroidView(
         factory = { context ->
@@ -62,6 +87,39 @@ fun TimeDisplay(state: StopwatchState, modifier: Modifier = Modifier, textSp: Fl
             chronometer.base = SystemClock.elapsedRealtime() - state.currentElapsedMs()
             if (state.isRunning) chronometer.start() else chronometer.stop()
         },
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun CentisTimeDisplay(state: StopwatchState, modifier: Modifier, textSp: Float) {
+    val now by produceState(SystemClock.elapsedRealtime(), state) {
+        value = SystemClock.elapsedRealtime()
+        if (state.isRunning) {
+            while (isActive) {
+                withFrameMillis { }
+                value = SystemClock.elapsedRealtime()
+            }
+        }
+    }
+    val ms = state.currentElapsedMs(now)
+    val text = buildAnnotatedString {
+        append(DateUtils.formatElapsedTime(ms / 1000))
+        withStyle(SpanStyle(fontSize = (textSp * CENTIS_SCALE).sp)) {
+            append("," + ((ms % 1000) / 10).toString().padStart(2, '0'))
+        }
+    }
+    Text(
+        text = text,
+        style = TextStyle(
+            fontSize = textSp.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Light,
+            fontFeatureSettings = "tnum",
+            color = MaterialTheme.colorScheme.onBackground,
+        ),
+        textAlign = TextAlign.Center,
+        maxLines = 1,
         modifier = modifier,
     )
 }
@@ -124,7 +182,7 @@ fun ControlRow(
 }
 
 @Composable
-private fun RoundAction(
+internal fun RoundAction(
     icon: Int,
     label: String,
     onClick: () -> Unit,
@@ -132,8 +190,9 @@ private fun RoundAction(
     size: Dp,
     containerColor: Color,
     contentColor: Color,
+    modifier: Modifier = Modifier,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Button(
             onClick = onClick,
             enabled = enabled,
@@ -155,11 +214,21 @@ private fun RoundAction(
 
 @Composable
 fun LapList(laps: List<Long>, modifier: Modifier = Modifier, header: (@Composable () -> Unit)? = null) {
-    val rows = laps.mapIndexed { index, total -> Triple(index + 1, total - (laps.getOrNull(index - 1) ?: 0L), total) }.asReversed()
+    val context = LocalContext.current
+    val splits = laps.mapIndexed { index, total -> total - (laps.getOrNull(index - 1) ?: 0L) }
+    val fastest = if (splits.size >= 3) splits.indexOf(splits.min()) else -1
+    val slowest = if (splits.size >= 3) splits.indexOf(splits.max()) else -1
+    val colors = actionColors()
+    val rows = laps.indices.reversed()
     LazyColumn(modifier = modifier) {
         if (header != null) item(key = "header") { header() }
-        if (rows.isNotEmpty()) {
+        if (laps.isNotEmpty()) {
             item(key = "columns") {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { copyLaps(context, laps) }) {
+                        Text(stringResource(R.string.laps_copy))
+                    }
+                }
                 LapRow(
                     first = stringResource(R.string.lap_header_number),
                     second = stringResource(R.string.lap_header_split),
@@ -170,15 +239,32 @@ fun LapList(laps: List<Long>, modifier: Modifier = Modifier, header: (@Composabl
                 HorizontalDivider()
             }
         }
-        items(rows, key = { it.first }) { (number, split, total) ->
+        items(rows.toList(), key = { it }) { index ->
+            val color = when (index) {
+                fastest -> colors.start
+                slowest -> colors.pause
+                else -> MaterialTheme.colorScheme.onSurface
+            }
             LapRow(
-                first = stringResource(R.string.lap_label, number),
-                second = formatLap(split),
-                third = formatLap(total),
+                first = stringResource(R.string.lap_label, index + 1),
+                second = formatLap(splits[index]),
+                third = formatLap(laps[index]),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = color,
             )
         }
+    }
+}
+
+private fun copyLaps(context: Context, laps: List<Long>) {
+    val text = laps.mapIndexed { index, total ->
+        val split = total - (laps.getOrNull(index - 1) ?: 0L)
+        context.getString(R.string.lap_label, index + 1) + "\t" + formatLap(split) + "\t" + formatLap(total)
+    }.joinToString("\n")
+    val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
+    clipboard.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.laps_clip_label), text))
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        Toast.makeText(context, R.string.laps_copied, Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -216,6 +302,7 @@ fun formatLap(ms: Long): String =
     DateUtils.formatElapsedTime(ms / 1000) + "," + ((ms % 1000) / 10).toString().padStart(2, '0')
 
 private const val TIME_TEXT_SP = 72f
+private const val CENTIS_SCALE = 0.55f
 
 @Preview(showBackground = true)
 @Composable
