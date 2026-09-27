@@ -94,16 +94,18 @@ app/src/main/java/com/oguzh/kronometre/
 ### Bildirim
 
 - `specialUse` FGS tipi + `PROPERTY_SPECIAL_USE_FGS_SUBTYPE`; çağrı `ServiceCompat.startForeground(..., FOREGROUND_SERVICE_TYPE_SPECIAL_USE)`.
-- Kanal `IMPORTANCE_LOW`, ses/titreşim/rozet yok, `VISIBILITY_PUBLIC`.
+- Kanal `stopwatch_v2`, `IMPORTANCE_DEFAULT` ama ses/titreşim/rozet yok, `VISIBILITY_PUBLIC`. `IMPORTANCE_LOW` "sessiz" sayılır ve birçok ROM'da ("sessiz bildirimleri kilit ekranında gizle") kilit ekranında gösterilmiyordu. Eski `stopwatch` kanalı silinir.
 - Her gönderim aynı `build(state, interactive)` fonksiyonundan geçer: `setOngoing`, `setSilent`,
   `setOnlyAlertOnce`, `VISIBILITY_PUBLIC` ve **aynı içerikle kurulmuş** `setPublicVersion` her seferinde birlikte.
-- Aksiyonlar: **Duraklat**, **Tur**. Her `PendingIntent` `FLAG_IMMUTABLE` ve aksiyona özel `requestCode` taşır.
-- Duraklatınca bildirim `STOP_FOREGROUND_REMOVE` ile tamamen kalkar ve servis durur.
+- Çalışırken aksiyonlar: **Duraklat**, **Tur**. Duraklatılmışken: **Sürdür**, **Sıfırla**. Her `PendingIntent` `FLAG_IMMUTABLE`, aksiyona özel `requestCode` taşır ve API 26+'da `getForegroundService` kullanır (servis duraklatılmışken çalışmıyor).
+- Duraklatınca bildirim "Kronometre duraklatıldı" + statik süreyle kalır, servis `STOP_FOREGROUND_DETACH` ile durur (duraklatılmışken çalışan servis, döngü, uyanma yok). **Sıfırla** bildirimi kaldırır.
 
 ### Widget
 
-Büyük süre, durum satırı, birincil buton (Başlat/Devam Et ↔ Duraklat), ikincil buton
-(çalışırken Tur, duraklatılmışken Sıfırla). Butonlar `actionStartService(..., isForegroundService = true)`,
+Boyuta göre üç düzen (`SizeMode.Responsive`): **küçük** (1 satır: süre + tek yuvarlak düğme),
+**orta** (durum, süre, iki yuvarlak ikon düğme), **geniş** (durum, büyük süre, iki etiketli düğme).
+Birincil düğme Başlat/Sürdür ↔ Duraklat, ikincil düğme çalışırken Tur, duraklatılmışken Sıfırla.
+Widget 110×40 dp'ye kadar küçültülüp büyütülebilir. Butonlar `actionStartService(..., isForegroundService = true)`,
 widget'ın geri kalanı `clickable(actionStartActivity<MainActivity>())`. Widget içeriği
 repository'den okunur; servis çalışmıyorken de doğru değeri gösterir.
 
@@ -129,7 +131,8 @@ Karartma `isInteractive`'ı değiştirmez; bildirim o sırada saniye modunda kal
 | Dakika metni | `formatElapsedTime(...).substringBeforeLast(':')` | `H:MM` elle | 1 saatin altında `formatElapsedTime` `MM:SS` üretir, kesince yalnızca dakika (`05`) kalıyordu |
 | Widget canlı sayaç API 23 | statik | canlı | `RemoteViews.setChronometer` API 1'den beri var; 24+ gereken yalnızca geri sayım |
 | Widget `setBase` | `currentTimeMillis - elapsed` | `elapsedRealtime - elapsed` | `Chronometer` tabanı `elapsedRealtime` ölçeğinde |
-| Bildirimden Sıfırla / Başlat | kabul kriterinde var | yok | Duraklatınca bildirim kalkıyor, Sıfırla yalnızca duraklatılmışken anlamlı (PROMPT BÖLÜM 2 "Sıfırlama sırasında bildirim yok"). Bu ikisi widget'tan ve uygulamadan yapılır |
+| Duraklatınca bildirim | tamamen kalkar | Sürdür / Sıfırla ile kalır | Kullanıcı kararı (2026-09-27). Sıfırla bildirimi kapatır. Android 14+'da FGS olmayan bildirim kullanıcı tarafından kaydırılarak kapatılabilir; duraklatılmışken servis çalıştırmamak için bu kabul edildi |
+| Bildirim kanalı önemi | `IMPORTANCE_LOW` | `IMPORTANCE_DEFAULT` (sessiz) | LOW kanallar kilit ekranında gizlenebiliyor; ses ve titreşim kanal düzeyinde kapalı |
 | OEM yardım ekranı | ayrı ekran, "gösterildi" bayrağı, 3+ açılış sayacı | ana ekranda kapatılabilir kart | "Ayar ekranı yok" ve "DataStore'da yalnızca 3 anahtar" kuralları. Kart, marka agresifse ve muafiyet yoksa görünür; "Şimdilik kapat" o oturum için gizler; muafiyet verilince (`onResume`'da okunur) bir daha görünmez. Stock Android'de yalnızca nötr tek adım gösterilir |
 | Dokunma algılama | `pointerInput` | `Activity.dispatchTouchEvent` | Hiçbir olayı tüketmeden tüm pencereyi gözlüyor, kararmış ekrandaki ilk dokunuşu yutabiliyor |
 | Bildirim güncelleme çağrısı | `notify()` | `ServiceCompat.startForeground` | Aynı IPC, tek kod yolu, `POST_NOTIFICATIONS` lint uyarısı yok |
@@ -173,7 +176,7 @@ pil optimizasyonu listesi → hiçbiri açılmazsa elle yapılacak adım metni.
 
 | Marka | Adımlar |
 |---|---|
-| **Xiaomi / Redmi / POCO (HyperOS, MIUI)** | Güvenlik → Otomatik başlatma → Kronometre → **Aç** · Ayarlar → Uygulamalar → Kronometre → Pil → **Kısıtlama yok** · Son uygulamalar'da kartı **kilitle** |
+| **Xiaomi / Redmi / POCO (HyperOS, MIUI)** | Güvenlik → Otomatik başlatma → Kronometre → **Aç** · Ayarlar → Uygulamalar → Kronometre → Pil → **Kısıtlama yok** · Bildirimler → Kilit ekranı bildirimleri → Kronometre → **Aç, içeriği göster** · Son uygulamalar'da kartı **kilitle** |
 | **Samsung (One UI)** | Pil → Arka plan kullanımı → **Hiç kısıtlama** · Arka plan kullanımı sınırları → **Hiç uykuya dalmayan uygulamalar** → Kronometre ekle · Bildirimler → Kronometre bildirimlerine izin ver |
 | **Huawei / Honor (EMUI, MagicOS)** | Pil → Uygulama başlatma → **Otomatik yönetimi kapat**, üç anahtarı da elle aç · Pil → Kısıtlama yok |
 | **Oppo / Realme / OnePlus (ColorOS, OxygenOS)** | Pil → **Arka plan etkinliğine izin ver** · **Otomatik başlatma** → aç (Telefon Yöneticisi → Beyaz liste) · Pil → Kısıtlama yok |
@@ -190,11 +193,11 @@ pil optimizasyonu listesi → hiçbiri açılmazsa elle yapılacak adım metni.
 1. Uygulamayı aç, bildirim iznini ver, **Başlat**.
 2. Bildirim panelini aç → kronometre saniye saniye ilerliyor.
 3. Kilit ekranına geç → bildirim görünüyor, gerçek süreyi gösteriyor (redaction yok); Duraklat/Tur kilit ekranında çalışıyor.
-4. Bildirimden **Duraklat** → bildirim tamamen kalkıyor.
-5. Widget'tan veya uygulamadan **Devam Et** → bildirim geri geliyor, kaldığı yerden devam ediyor.
+4. Bildirimden **Duraklat** → bildirim "duraklatıldı" olarak kalıyor, süre duruyor, Sürdür ve Sıfırla görünüyor. **Sıfırla** → bildirim kalkıyor.
+5. Bildirimden **Sürdür** → kaldığı yerden devam ediyor.
 6. Uygulamayı son uygulamalardan kaydırarak kapat → bildirim ve sayaç devam ediyor.
 7. Bildirimi kaydırarak kapatmayı dene (kilit ekranında da) → silinmiyor.
-8. Widget'ı ekle → çalışırken süre akıyor; Duraklat / Tur / Devam Et / Sıfırla çalışıyor; widget'a dokununca uygulama açılıyor.
+8. Widget'ı ekle → çalışırken süre akıyor; Duraklat / Tur / Sürdür / Sıfırla çalışıyor; widget'a dokununca uygulama açılıyor; widget'ı küçültüp büyütünce düğmeler görünür kalıyor.
 9. Ekranı kapat, 2 dk bekle, aç → süre doğru ve bildirim hemen saniye moduna dönüyor.
 10. Uygulamada 10 sn dokunma → ekran yumuşakça kararıyor; dokun → geri geliyor. Duraklat → karartma iptal. Uygulamadan çık → ekran parlaklığı normal.
 11. **Release APK** ile 8. adımı tekrarla (R8 + Glance kontrolü).

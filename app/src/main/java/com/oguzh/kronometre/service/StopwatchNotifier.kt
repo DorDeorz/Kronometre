@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.text.format.DateUtils
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.oguzh.kronometre.MainActivity
@@ -17,10 +18,12 @@ class StopwatchNotifier(private val context: Context) {
 
     fun ensureChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = NotificationManagerCompat.from(context)
+        manager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
         val channel = NotificationChannel(
             CHANNEL_ID,
             context.getString(R.string.channel_name),
-            NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
             description = context.getString(R.string.channel_description)
             setShowBadge(false)
@@ -28,7 +31,7 @@ class StopwatchNotifier(private val context: Context) {
             enableVibration(false)
             setSound(null, null)
         }
-        NotificationManagerCompat.from(context).createNotificationChannel(channel)
+        manager.createNotificationChannel(channel)
     }
 
     fun build(state: StopwatchState, interactive: Boolean): Notification {
@@ -40,7 +43,6 @@ class StopwatchNotifier(private val context: Context) {
         val elapsed = state.currentElapsedMs()
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stopwatch)
-            .setContentTitle(context.getString(R.string.notification_title))
             .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
@@ -48,6 +50,20 @@ class StopwatchNotifier(private val context: Context) {
             .setSilent(true)
             .setLocalOnly(true)
             .setContentIntent(openAppIntent())
+        if (!state.isRunning) {
+            return builder
+                .setContentTitle(context.getString(R.string.notification_title_paused))
+                .setContentText(DateUtils.formatElapsedTime(elapsed / 1000))
+                .setUsesChronometer(false)
+                .setShowWhen(false)
+                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_DEFERRED)
+                .addAction(R.drawable.ic_play, context.getString(R.string.action_resume), serviceIntent(StopwatchActions.ACTION_RESUME))
+                .addAction(R.drawable.ic_reset, context.getString(R.string.action_reset), serviceIntent(StopwatchActions.ACTION_RESET))
+        }
+        builder.setContentTitle(context.getString(R.string.notification_title))
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .addAction(R.drawable.ic_pause, context.getString(R.string.action_pause), serviceIntent(StopwatchActions.ACTION_PAUSE))
+            .addAction(R.drawable.ic_lap, context.getString(R.string.action_lap), serviceIntent(StopwatchActions.ACTION_LAP))
         if (interactive) {
             builder.setUsesChronometer(true)
                 .setShowWhen(true)
@@ -57,13 +73,6 @@ class StopwatchNotifier(private val context: Context) {
             builder.setUsesChronometer(false)
                 .setShowWhen(false)
                 .setContentText(context.getString(R.string.notification_minutes, formatMinutes(elapsed)))
-        }
-        if (state.isRunning) {
-            builder.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-                .addAction(R.drawable.ic_pause, context.getString(R.string.action_pause), serviceIntent(StopwatchActions.ACTION_PAUSE))
-                .addAction(R.drawable.ic_lap, context.getString(R.string.action_lap), serviceIntent(StopwatchActions.ACTION_LAP))
-        } else {
-            builder.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_DEFERRED)
         }
         return builder
     }
@@ -79,16 +88,20 @@ class StopwatchNotifier(private val context: Context) {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-    private fun serviceIntent(action: String): PendingIntent =
-        PendingIntent.getService(
-            context,
-            StopwatchActions.requestCode(action),
-            StopwatchActions.intent(context, action),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+    private fun serviceIntent(action: String): PendingIntent {
+        val requestCode = StopwatchActions.requestCode(action)
+        val intent = StopwatchActions.intent(context, action)
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(context, requestCode, intent, flags)
+        } else {
+            PendingIntent.getService(context, requestCode, intent, flags)
+        }
+    }
 
     companion object {
-        const val CHANNEL_ID = "stopwatch"
+        const val CHANNEL_ID = "stopwatch_v2"
+        private const val LEGACY_CHANNEL_ID = "stopwatch"
         const val NOTIFICATION_ID = 1
         private const val REQUEST_OPEN_APP = 0
 

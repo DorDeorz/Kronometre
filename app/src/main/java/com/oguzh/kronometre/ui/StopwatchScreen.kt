@@ -5,6 +5,10 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -95,39 +99,86 @@ fun StopwatchContent(
     oemCard: @Composable () -> Unit,
 ) {
     Scaffold { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (!notificationsEnabled) {
-                MessageBanner(
-                    message = stringResource(R.string.notifications_disabled),
-                    actionLabel = stringResource(R.string.notifications_allow),
-                    onAction = onOpenNotificationSettings,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+            val landscape = maxWidth > maxHeight
+            Column(modifier = Modifier.fillMaxSize()) {
+                if (!notificationsEnabled) {
+                    MessageBanner(
+                        message = stringResource(R.string.notifications_disabled),
+                        actionLabel = stringResource(R.string.notifications_allow),
+                        onAction = onOpenNotificationSettings,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                if (startFailed) {
+                    MessageBanner(
+                        message = stringResource(R.string.start_failed),
+                        actionLabel = stringResource(R.string.ok),
+                        onAction = onDismissError,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                if (landscape) {
+                    Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                        TimerPanel(
+                            state = state,
+                            timeSp = 60f,
+                            onToggle = onToggle,
+                            onLap = onLap,
+                            onReset = onReset,
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                        )
+                        LapList(
+                            laps = state.laps,
+                            header = { Box(Modifier.padding(vertical = 8.dp)) { oemCard() } },
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                        )
+                    }
+                } else {
+                    Box(Modifier.padding(top = 8.dp)) { oemCard() }
+                    Column(
+                        modifier = Modifier.weight(if (state.laps.isEmpty()) 1f else 0.9f).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        TimeDisplay(state = state, modifier = Modifier.fillMaxWidth())
+                        StatusText(state = state, modifier = Modifier.padding(top = 4.dp))
+                    }
+                    if (state.laps.isNotEmpty()) {
+                        LapList(laps = state.laps, modifier = Modifier.weight(1f).fillMaxWidth())
+                    }
+                    ControlRow(
+                        state = state,
+                        onToggle = onToggle,
+                        onLap = onLap,
+                        onReset = onReset,
+                        modifier = Modifier.padding(top = 16.dp, bottom = 32.dp),
+                    )
+                }
             }
-            if (startFailed) {
-                MessageBanner(
-                    message = stringResource(R.string.start_failed),
-                    actionLabel = stringResource(R.string.ok),
-                    onAction = onDismissError,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-            oemCard()
-            TimeDisplay(state = state, modifier = Modifier.fillMaxWidth().padding(top = 32.dp))
-            StatusText(state = state)
-            ControlRow(
-                state = state,
-                onToggle = onToggle,
-                onLap = onLap,
-                onReset = onReset,
-                modifier = Modifier.padding(vertical = 16.dp),
-            )
-            LapList(laps = state.laps, modifier = Modifier.weight(1f).fillMaxWidth())
         }
+    }
+}
+
+@Composable
+private fun TimerPanel(
+    state: StopwatchState,
+    timeSp: Float,
+    onToggle: () -> Unit,
+    onLap: () -> Unit,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            TimeDisplay(state = state, textSp = timeSp, modifier = Modifier.fillMaxWidth())
+            StatusText(state = state, modifier = Modifier.padding(top = 4.dp))
+        }
+        ControlRow(state = state, onToggle = onToggle, onLap = onLap, onReset = onReset)
     }
 }
 
@@ -139,6 +190,24 @@ private fun StopwatchContentPreview() {
             state = StopwatchState(elapsedMs = 83_450L, laps = listOf(30_120L, 61_900L)),
             startFailed = false,
             notificationsEnabled = false,
+            onToggle = {},
+            onLap = {},
+            onReset = {},
+            onDismissError = {},
+            onOpenNotificationSettings = {},
+            oemCard = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 800, heightDp = 360)
+@Composable
+private fun StopwatchContentLandscapePreview() {
+    KronometreTheme(dynamicColor = false) {
+        StopwatchContent(
+            state = StopwatchState(elapsedMs = 83_450L, laps = listOf(30_120L, 61_900L)),
+            startFailed = false,
+            notificationsEnabled = true,
             onToggle = {},
             onLap = {},
             onReset = {},

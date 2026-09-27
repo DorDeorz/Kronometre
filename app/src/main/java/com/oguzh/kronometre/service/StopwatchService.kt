@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.glance.appwidget.updateAll
@@ -86,13 +87,20 @@ class StopwatchService : Service() {
         handler.removeCallbacks(minuteTick)
         val notification = notifier.build(state, interactive)
         if (!post(notification)) {
+            if (!state.isRunning && state.elapsedMs == 0L) {
+                NotificationManagerCompat.from(this).cancel(StopwatchNotifier.NOTIFICATION_ID)
+            }
             stop(startId)
             return
         }
         if (state.isRunning) {
             if (!interactive) scheduleMinuteTick(state)
         } else {
-            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+            val keepNotification = state.elapsedMs > 0L
+            ServiceCompat.stopForeground(
+                this,
+                if (keepNotification) ServiceCompat.STOP_FOREGROUND_DETACH else ServiceCompat.STOP_FOREGROUND_REMOVE,
+            )
             stop(startId)
         }
     }

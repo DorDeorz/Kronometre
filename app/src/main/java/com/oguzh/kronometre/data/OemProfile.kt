@@ -25,7 +25,7 @@ enum class OemProfile(
         autostartComponents = listOf(
             ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
         ),
-        steps = listOf(OemStep(R.string.oem_xiaomi_1, OemTarget.Autostart), OemStep(R.string.oem_xiaomi_2, OemTarget.BatteryExemption), OemStep(R.string.oem_xiaomi_3, OemTarget.Manual)),
+        steps = listOf(OemStep(R.string.oem_xiaomi_1, OemTarget.Autostart), OemStep(R.string.oem_xiaomi_2, OemTarget.BatteryExemption), OemStep(R.string.oem_xiaomi_lock, OemTarget.NotificationSettings), OemStep(R.string.oem_xiaomi_3, OemTarget.Manual)),
     ),
     Huawei(
         manufacturerKeys = listOf("huawei", "honor"),
