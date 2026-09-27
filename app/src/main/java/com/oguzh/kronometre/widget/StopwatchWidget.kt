@@ -266,7 +266,7 @@ private fun TimeViews(state: StopwatchState, textDp: Float, modifier: GlanceModi
 }
 
 private fun timeTextSize(state: StopwatchState, width: Dp, height: Dp): Float {
-    val ems = if (state.isRunning || state.currentElapsedMs() >= DateUtils.HOUR_IN_MILLIS) 3.6f else 2.8f
+    val ems = if (state.isRunning || state.currentElapsedMs() >= DateUtils.HOUR_IN_MILLIS) 4.4f else 3.4f
     return minOf(width.value / ems, height.value * 0.8f).coerceIn(14f, 120f)
 }
 

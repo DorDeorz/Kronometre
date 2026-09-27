@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,7 +41,7 @@ import com.oguzh.kronometre.ui.oem.BatteryOptimizationHelper
 import com.oguzh.kronometre.ui.theme.KronometreTheme
 
 @Composable
-fun StopwatchScreen(viewModel: StopwatchViewModel, onRunningChanged: (Boolean) -> Unit) {
+fun StopwatchScreen(viewModel: StopwatchViewModel, onRunningChanged: (Boolean) -> Unit, onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val startFailed by viewModel.startFailed.collectAsStateWithLifecycle()
@@ -78,6 +81,7 @@ fun StopwatchScreen(viewModel: StopwatchViewModel, onRunningChanged: (Boolean) -
         onReset = viewModel::reset,
         onDismissError = viewModel::dismissError,
         onOpenNotificationSettings = { BatteryOptimizationHelper.openNotificationSettings(context) },
+        onOpenSettings = onOpenSettings,
         oemCard = {
             if (!batteryExempt && !oemDismissed) {
                 BatteryOptimizationCard(profile = profile, onDismiss = { oemDismissed = true })
@@ -96,12 +100,18 @@ fun StopwatchContent(
     onReset: () -> Unit,
     onDismissError: () -> Unit,
     onOpenNotificationSettings: () -> Unit,
+    onOpenSettings: () -> Unit,
     oemCard: @Composable () -> Unit,
 ) {
     Scaffold { padding ->
         BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
             val landscape = maxWidth > maxHeight
             Column(modifier = Modifier.fillMaxSize()) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
+                    }
+                }
                 if (!notificationsEnabled) {
                     MessageBanner(
                         message = stringResource(R.string.notifications_disabled),
@@ -195,6 +205,7 @@ private fun StopwatchContentPreview() {
             onReset = {},
             onDismissError = {},
             onOpenNotificationSettings = {},
+            onOpenSettings = {},
             oemCard = {},
         )
     }
@@ -213,6 +224,7 @@ private fun StopwatchContentLandscapePreview() {
             onReset = {},
             onDismissError = {},
             onOpenNotificationSettings = {},
+            onOpenSettings = {},
             oemCard = {},
         )
     }
@@ -231,6 +243,7 @@ private fun StopwatchContentDarkPreview() {
             onReset = {},
             onDismissError = {},
             onOpenNotificationSettings = {},
+            onOpenSettings = {},
             oemCard = {},
         )
     }

@@ -61,4 +61,12 @@
     <string name="oem_transsion_1">Otomatik yönetim → uygulama listesinden Kronometre\'yi seç, üç izni de aç</string>
 
     <string name="oem_stock_1">Ayarlar → Uygulamalar → Kronometre → Pil → Kısıtlama yok</string>
+    <string name="settings">Ayarlar</string>
+    <string name="back">Geri</string>
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Sistem varsayılanı</string>
+    <string name="theme_light">Açık</string>
+    <string name="theme_dark">Koyu</string>
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_version">Sürüm</string>
 </resources>

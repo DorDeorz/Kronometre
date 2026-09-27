@@ -9,6 +9,8 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
@@ -28,9 +30,11 @@ private val DarkColors = darkColorScheme(
 
 data class ActionColors(val start: Color, val pause: Color)
 
+private val LocalDarkTheme = staticCompositionLocalOf { false }
+
 @Composable
 fun actionColors(): ActionColors =
-    if (isSystemInDarkTheme()) ActionColors(StartGreenDark, PauseRedDark) else ActionColors(StartGreen, PauseRed)
+    if (LocalDarkTheme.current) ActionColors(StartGreenDark, PauseRedDark) else ActionColors(StartGreen, PauseRed)
 
 @Composable
 fun KronometreTheme(
@@ -46,5 +50,7 @@ fun KronometreTheme(
         darkTheme -> DarkColors
         else -> LightColors
     }
-    MaterialTheme(colorScheme = colorScheme, typography = AppTypography, content = content)
+    CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+        MaterialTheme(colorScheme = colorScheme, typography = AppTypography, content = content)
+    }
 }

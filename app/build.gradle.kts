@@ -11,8 +11,20 @@ android {
         applicationId = "com.oguzh.kronometre"
         minSdk = 23
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 1
+        versionName = (findProperty("appVersionName") as String?) ?: "1.0.0"
+    }
+
+    val releaseKeystore = System.getenv("KRONOMETRE_KEYSTORE")?.let(::file)?.takeIf { it.exists() }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("KRONOMETRE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KRONOMETRE_KEY_ALIAS")
+                keyPassword = System.getenv("KRONOMETRE_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -20,7 +32,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (releaseKeystore != null) "release" else "debug")
         }
     }
 
@@ -32,6 +44,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     lint {
