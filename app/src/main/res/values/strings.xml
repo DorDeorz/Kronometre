@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kronometre</string>
+
+    <string name="status_running">Çalışıyor</string>
+    <string name="status_paused">Duraklatıldı</string>
+    <string name="status_reset">Sıfırlandı</string>
+
+    <string name="action_start">Başlat</string>
+    <string name="action_resume">Devam Et</string>
+    <string name="action_pause">Duraklat</string>
+    <string name="action_lap">Tur</string>
+    <string name="action_reset">Sıfırla</string>
+    <string name="lap_label">Tur %1$d</string>
+    <string name="ok">Tamam</string>
+
+    <string name="channel_name">Kronometre</string>
+    <string name="channel_description">Çalışan kronometre süresi ve kontrolleri</string>
+    <string name="notification_title">Kronometre çalışıyor</string>
+    <string name="notification_laps">%1$d tur</string>
+    <string name="notification_minutes">Geçen süre %1$s (sa:dk)</string>
+
+    <string name="notifications_disabled">Kronometre bildirimi kapalı — süreyi göremiyoruz, izin ver</string>
+    <string name="notifications_allow">İzin ver</string>
+    <string name="start_failed">Kronometre arka planda başlatılamadı. Uygulamayı açıkken tekrar dene.</string>
+
+    <string name="widget_description">Süreyi canlı gösterir; Başlat, Duraklat, Tur ve Sıfırla buradan çalışır.</string>
+
+    <string name="oem_title">Kronometre arka planda çalışsın</string>
+    <string name="oem_title_stock">Pil optimizasyonu muafiyeti</string>
+    <string name="oem_intro">Bu telefon ekran kapandıktan sonra arka plandaki uygulamaları kapatabilir. Aşağıdaki adımlar kronometrenin durmamasını sağlar.</string>
+    <string name="oem_open">Aç</string>
+    <string name="oem_dismiss">Şimdilik kapat</string>
+    <string name="oem_open_failed">Bu ekran bu telefonda açılamadı. Adımı Ayarlar içinden elle yap.</string>
+    <string name="oem_battery_common">Ayarlar → Uygulamalar → Kronometre → Pil → Kısıtlama yok</string>
+
+    <string name="oem_xiaomi_1">Güvenlik → Otomatik başlatma → Kronometre → Aç</string>
+    <string name="oem_xiaomi_2">Ayarlar → Uygulamalar → Kronometre → Pil → Kısıtlama yok</string>
+    <string name="oem_xiaomi_3">Son uygulamalar ekranında Kronometre kartını basılı tutup kilitle</string>
+
+    <string name="oem_samsung_1">Pil → Arka plan kullanımı → Hiç kısıtlama</string>
+    <string name="oem_samsung_2">Pil → Arka plan kullanımı sınırları → Hiç uykuya dalmayan uygulamalar → Kronometre ekle</string>
+    <string name="oem_samsung_3">Bildirimler → Kronometre bildirimlerine izin ver</string>
+
+    <string name="oem_huawei_1">Pil → Uygulama başlatma → Kronometre → Otomatik yönetimi kapat, Otomatik başlatma / İkincil başlatma / Arka planda çalışma üçünü de aç</string>
+
+    <string name="oem_oppo_1">Pil → Arka plan etkinliğine izin ver → Kronometre: Arka planda çalıştırmaya izin ver</string>
+    <string name="oem_oppo_2">Otomatik başlatma → Kronometre → Aç (Telefon Yöneticisi → Beyaz liste → Kronometre)</string>
+
+    <string name="oem_vivo_1">Pil → Arka plan yönetimi → Yüksek arka plan tüketimi → Kronometre beyaz listeye al</string>
+    <string name="oem_vivo_2">Otomatik başlatma → Kronometre → Aç</string>
+
+    <string name="oem_asus_1">Otomatik başlatma → Kronometre\'ye izin ver</string>
+
+    <string name="oem_transsion_1">Otomatik yönetim → uygulama listesinden Kronometre\'yi seç, üç izni de aç</string>
+
+    <string name="oem_stock_1">Ayarlar → Uygulamalar → Kronometre → Pil → Kısıtlama yok</string>
+</resources>
