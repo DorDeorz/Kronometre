@@ -4,7 +4,7 @@ Tek ekranlı, tek işli bir Android kronometresi. Ekran kapalıyken de doğru sa
 bildirimden ve ana ekran widget'ından kontrol edilir; çalışırken uygulamanın kendi
 saniyelik döngüsü, wake lock'u veya periyodik işi yoktur.
 
-- Paket: `com.oguzh.kronometre` · `minSdk 23` · `targetSdk 36` · `compileSdk 37`
+- Paket: `com.dordeorz.kronometre` · `minSdk 23` · `targetSdk 36` · `compileSdk 37`
 - Teknik sözleşme: [`PROMPT.md`](PROMPT.md) · niyet: [`CLAUDE.md`](CLAUDE.md)
 
 > **Durum:** GitHub Actions'ta `assembleDebug assembleRelease lint testDebugUnitTest` yeşil
@@ -57,7 +57,7 @@ destekliyor. `targetSdk` 36'da kaldı; çalışma zamanı davranışı değişmi
 ## Mimari
 
 ```
-app/src/main/java/com/oguzh/kronometre/
+app/src/main/java/com/dordeorz/kronometre/
 ├── MainActivity.kt                 tek Activity, ComposeView (activity_main.xml)
 ├── data/StopwatchState.kt          saf durum + geçişler (start/pause/lap/reset)
 ├── data/StopwatchRepository.kt     DataStore, 3 anahtar, StateFlow, manuel singleton
@@ -215,7 +215,7 @@ pil optimizasyonu listesi → hiçbiri açılmazsa elle yapılacak adım metni.
 
 ### Her iki cihaz
 ```
-adb shell dumpsys notification --noredact | grep -A5 com.oguzh.kronometre   # visibility=0 (PUBLIC) ve ongoing olmalı
+adb shell dumpsys notification --noredact | grep -A5 com.dordeorz.kronometre   # visibility=0 (PUBLIC) ve ongoing olmalı
 ```
 
 ---
@@ -235,9 +235,9 @@ adb shell dumpsys batterystats --enable full-wake-history
 **Koşu A — ekran kapalı, 60 dk:** Uygulamayı aç → Başlat → uygulamayı kaydırarak kapat →
 ekranı kapat → 60 dk bekle (şarja takma). Sonra:
 ```
-adb shell dumpsys batterystats com.oguzh.kronometre > bs_A.txt
+adb shell dumpsys batterystats com.dordeorz.kronometre > bs_A.txt
 adb shell dumpsys cpuinfo | grep -i kronometre          # ~%0 olmalı
-adb shell dumpsys meminfo com.oguzh.kronometre          # PSS < 60 MB
+adb shell dumpsys meminfo com.dordeorz.kronometre          # PSS < 60 MB
 grep -i "wake" bs_A.txt                                 # uygulamaya ait wake lock 0 olmalı
 grep -i "Screen off discharge" bs_A.txt
 adb bugreport bugreport_A.zip                           # Battery Historian için
@@ -249,14 +249,14 @@ kararır), 10 dk sonra `bs_B.txt` al.
 **Koşu C — ekran açık, karartmasız, 10 dk:** `DIM_DELAY_MS`'i geçici olarak çok büyük bir
 değere çek, debug APK kur, aynı 10 dk'yı ölç (`bs_C.txt`). Karartmanın kazancını bu verir.
 
-**Baz:** `adb shell am force-stop com.oguzh.kronometre` sonrası 60 dk ekran kapalı ölç.
+**Baz:** `adb shell am force-stop com.dordeorz.kronometre` sonrası 60 dk ekran kapalı ölç.
 A ile baz arasındaki `Screen off discharge` farkı ayırt edilemez olmalı.
 
 **Boyut ve açılış:**
 ```
 ls -l app/build/outputs/apk/release/app-release.apk      # < 3.5 MB
-adb shell am force-stop com.oguzh.kronometre
-adb shell am start -W -n com.oguzh.kronometre/.MainActivity   # TotalTime < 300 ms
+adb shell am force-stop com.dordeorz.kronometre
+adb shell am start -W -n com.dordeorz.kronometre/.MainActivity   # TotalTime < 300 ms
 ```
 
 ### Sonuçlar

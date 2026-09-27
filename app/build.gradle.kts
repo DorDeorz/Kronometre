@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.oguzh.kronometre"
+    namespace = "com.dordeorz.kronometre"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.oguzh.kronometre"
+        applicationId = "com.dordeorz.kronometre"
         minSdk = 23
         targetSdk = 36
         versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 1
