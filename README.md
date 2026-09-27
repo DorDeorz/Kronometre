@@ -7,12 +7,11 @@ saniyelik döngüsü, wake lock'u veya periyodik işi yoktur.
 - Paket: `com.oguzh.kronometre` · `minSdk 23` · `targetSdk 36` · `compileSdk 37`
 - Teknik sözleşme: [`PROMPT.md`](PROMPT.md) · niyet: [`CLAUDE.md`](CLAUDE.md)
 
-> **Durum:** Kod yazıldı. Bulut ortamında Android SDK indirilemediği için (`dl.google.com`
-> ağ politikasıyla engelli) derleme, lint ve unit testler **henüz bu oturumda
-> çalıştırılmadı.** GitHub Actions iş akışı (`.github/workflows/android.yml`) her push'ta
-> `assembleDebug assembleRelease lint testDebugUnitTest` çalıştırır ve APK'yı artifact
-> olarak yükler. Cihaz testleri ve ölçümler kullanıcının işidir; sonuçlar aşağıdaki
-> tablolara girilene kadar "ölçülmedi" olarak kalır.
+> **Durum:** GitHub Actions'ta `assembleDebug assembleRelease lint testDebugUnitTest` yeşil
+> (lint: 0 hata, 11 uyarı; release APK 2 630 979 bayt). APK'lar her koşunun
+> `kronometre-apk-ve-raporlar` artifact'ında. Bulut oturumunda `dl.google.com` engelli
+> olduğu için derleme yerelde değil CI'da doğrulanıyor. Cihaz testleri ve ölçümler
+> kullanıcının işidir; sonuçlar aşağıdaki tablolara girilene kadar "ölçülmedi" kalır.
 
 ---
 
@@ -266,7 +265,7 @@ adb shell am start -W -n com.oguzh.kronometre/.MainActivity   # TotalTime < 300 
 | Baz: Screen off discharge (mAh/sa) | — | ölçülmedi | ölçülmedi |
 | PSS çalışırken | < 60 MB | ölçülmedi | ölçülmedi |
 | Cold start (`TotalTime`) | < 300 ms | ölçülmedi | ölçülmedi |
-| APK (R8 release) | < 3.5 MB | CI çıktısında | — |
+| APK (R8 release) | < 3.5 MB | 2.63 MB (2 630 979 bayt, CI) | aynı APK |
 
 **Üç koşu yan yana (pil düşüşü, mAh / %):**
 
