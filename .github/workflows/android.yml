@@ -2,6 +2,7 @@ name: Android
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -14,7 +15,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
       - name: Build, lint, test
         run: ./gradlew --stacktrace assembleDebug assembleRelease lint testDebugUnitTest
