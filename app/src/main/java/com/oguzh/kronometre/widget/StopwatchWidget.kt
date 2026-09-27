@@ -75,7 +75,7 @@ private val BUTTON_GAP = 12.dp
 private val HEADER_HEIGHT = 20.dp
 private val LAP_LINE_HEIGHT = 20.dp
 private const val SECONDARY_SCALE = 0.8f
-private const val GAP_RATIO = 0.25f
+private const val GAP_RATIO = 0.2f
 
 private val TextSecondary = ColorProvider(day = Color(0xFF5A5D57), night = Color(0xFFB5B8B0))
 private val OnSecondary = ColorProvider(day = Color(0xFF1B1C1A), night = Color(0xFFF2F2EE))
