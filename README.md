@@ -130,7 +130,6 @@ Karartma `isInteractive`'ı değiştirmez; bildirim o sırada saniye modunda kal
 |---|---|---|---|
 | `compileSdk` | 36 | 37 | Güncel stable AndroidX 36 ile derlenmiyor (yukarıda) |
 | AGP | 9.3.x | 9.4.0 | Doğrulanabilen güncel stable |
-| Bildirimde saniye modu `setShowWhen` | `false` | `true` | API 23'te `showWhen=false` kronometreyi de gizliyor; API 24+'da `usesChronometer` iken zaman damgası yerine kronometre çizilir, görünen fark yok |
 | Dakika metni | `formatElapsedTime(...).substringBeforeLast(':')` | `H:MM` elle | 1 saatin altında `formatElapsedTime` `MM:SS` üretir, kesince yalnızca dakika (`05`) kalıyordu |
 | Widget canlı sayaç API 23 | statik | canlı | `RemoteViews.setChronometer` API 1'den beri var; 24+ gereken yalnızca geri sayım |
 | Widget `setBase` | `currentTimeMillis - elapsed` | `elapsedRealtime - elapsed` | `Chronometer` tabanı `elapsedRealtime` ölçeğinde |
@@ -148,7 +147,7 @@ Karartma `isInteractive`'ı değiştirmez; bildirim o sırada saniye modunda kal
   yeniden başlarsa) açılışta kayıtlı `elapsed_ms` yüklenir ve **duraklatılmış** devam eder.
   Son başlatma/turdan sonraki çalışan süre kaybolur. Bu kasıtlı: `elapsedRealtime` yeniden
   başlatmada sıfırlandığı için o segment güvenle hesaplanamaz. Boot'ta otomatik devam yok.
-- **Ekran kapalıyken bildirim dakika hassasiyetindedir.** `setUsesChronometer` saniyeyi
+- **Ekran kapalıyken bildirim dakika hassasiyetindedir.** `Chronometer` saniyeyi
   gizleyemez; bu modda uygulama dakikada bir bildirimi tazeler (saatte ~60 `startForeground`
   çağrısı). Tik `Handler` ile kurulur ve wake lock almaz; CPU derin uykudayken tik de
   bekler. Sonuç: AOD/kilit ekranındaki dakika metni gecikebilir, ama ekran açıldığı anda
