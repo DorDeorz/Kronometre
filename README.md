@@ -102,9 +102,11 @@ app/src/main/java/com/oguzh/kronometre/
 
 ### Widget
 
-Boyuta göre üç düzen (`SizeMode.Responsive`): **küçük** (1 satır: süre + tek yuvarlak düğme),
-**orta** (durum, süre, iki yuvarlak ikon düğme), **geniş** (durum, büyük süre, iki etiketli düğme).
-Birincil düğme Başlat/Sürdür ↔ Duraklat, ikincil düğme çalışırken Tur, duraklatılmışken Sıfırla.
+`SizeMode.Exact`: süre yazısı ve düğmeler widget'ın gerçek boyutuna göre hesaplanır, boşluk kalmaz.
+Yükseklik 100 dp'nin altındaysa tek satır (süre + düğmeler; dar ise yalnızca birincil düğme),
+üstündeyse sütun (150 dp'den yüksekse üstte durum satırı, ortada büyük süre, altta yuvarlak düğmeler).
+Düğmeler: çalışırken **Sıfırla · Duraklat · Tur**, duraklatılmışken **Sıfırla · Sürdür**, sıfırdayken **Başlat**.
+Boyut değişince yalnızca bir kez yeniden çizilir; saniyelik güncelleme yok.
 Widget 110×40 dp'ye kadar küçültülüp büyütülebilir. Butonlar `actionStartService(..., isForegroundService = true)`,
 widget'ın geri kalanı `clickable(actionStartActivity<MainActivity>())`. Widget içeriği
 repository'den okunur; servis çalışmıyorken de doğru değeri gösterir.
