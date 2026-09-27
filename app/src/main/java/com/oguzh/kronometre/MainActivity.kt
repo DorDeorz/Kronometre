@@ -1,7 +1,6 @@
 package com.oguzh.kronometre
 
 import android.os.Bundle
-import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
@@ -81,8 +80,8 @@ class MainActivity : ComponentActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    override fun onUserInteraction() {
+        super.onUserInteraction()
         dimController.onInteraction()
-        return super.dispatchKeyEvent(event)
     }
 }
