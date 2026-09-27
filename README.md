@@ -43,7 +43,7 @@ _Yakında eklenecek._
 
 ## Kurulum
 
-1. [Sürümler](https://github.com/DorDeorz/Kronometre/releases/latest) sayfasından `app-release.apk` dosyasını indir.
+1. [Sürümler](https://github.com/DorDeorz/Kronometre/releases/latest) sayfasından `Kronometre-X.Y.Z.apk` dosyasını indir.
 2. Telefonda dosyayı aç. İstenirse tarayıcına veya dosya yöneticine **bilinmeyen uygulamaları yükleme** izni ver.
 3. Uygulamayı aç ve bildirim iznine izin ver.
 
@@ -63,4 +63,4 @@ Uygulama hiçbir kişisel veri toplamaz ve hiçbir yere göndermez. Kronometre, 
 - Android 6.0 (API 23) ve üstü; Kotlin, Jetpack Compose, Glance widget, DataStore.
 - Derleme: `./gradlew assembleDebug` · Testler: `./gradlew testDebugUnitTest` · Lint: `./gradlew lint`
 - Mimari, pil ölçüm protokolü, marka bazında ayarlar ve manuel test listesi: [docs/TEKNIK.md](docs/TEKNIK.md)
-- Yeni sürüm: `vX.Y.Z` etiketi itilince GitHub Actions imzalı APK ve AAB üretip sürüm sayfasına ekler.
+- Yeni sürüm: Actions → Release → "Run workflow" (sürüm numarasıyla) ya da `vX.Y.Z` etiketi; imzalı APK ve AAB sürüm sayfasına eklenir.
