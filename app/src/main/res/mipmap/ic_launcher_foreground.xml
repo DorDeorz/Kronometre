@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/launcher_foreground"
+        android:pathData="M50.5,23h7a2.5,2.5 0,0 1,2.5 2.5v1a2.5,2.5 0,0 1,-2.5 2.5h-7a2.5,2.5 0,0 1,-2.5 -2.5v-1a2.5,2.5 0,0 1,2.5 -2.5zM52,28h4v7h-4z" />
+    <group
+        android:pivotX="74"
+        android:pivotY="35.5"
+        android:rotation="45">
+        <path
+            android:fillColor="@color/launcher_foreground"
+            android:pathData="M72,33h4a2,2 0,0 1,2 2v1a2,2 0,0 1,-2 2h-4a2,2 0,0 1,-2 -2v-1a2,2 0,0 1,2 -2z" />
+    </group>
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,35a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z"
+        android:strokeWidth="5.5"
+        android:strokeColor="@color/launcher_foreground" />
+    <path
+        android:fillColor="#48FFFFFF"
+        android:pathData="M54,59L54,38.5A20.5,20.5 0,1 1,36.25 69.25Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,59L54,40"
+        android:strokeWidth="4"
+        android:strokeColor="@color/launcher_foreground"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="@color/launcher_foreground"
+        android:pathData="M54,55a4,4 0,1 1,0 8a4,4 0,1 1,0 -8z" />
+</vector>

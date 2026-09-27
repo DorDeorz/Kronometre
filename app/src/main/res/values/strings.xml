@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kronometre</string>
+
+    <string name="status_running">Çalışıyor</string>
+    <string name="status_paused">Duraklatıldı</string>
+    <string name="status_reset">Sıfırlandı</string>
+
+    <string name="action_start">Başlat</string>
+    <string name="action_resume">Sürdür</string>
+    <string name="action_pause">Duraklat</string>
+    <string name="action_lap">Tur</string>
+    <string name="action_reset">Sıfırla</string>
+    <string name="lap_label">Tur %1$d</string>
+    <string name="widget_last_lap">Tur %1$d · %2$s</string>
+    <string name="ok">Tamam</string>
+
+    <string name="channel_name">Kronometre</string>
+    <string name="channel_description">Çalışan kronometre süresi ve kontrolleri</string>
+    <string name="notification_title">Kronometre çalışıyor</string>
+    <string name="notification_title_paused">Kronometre duraklatıldı</string>
+    <string name="notification_laps">%1$d tur</string>
+    <string name="notification_minutes_hint">sa:dk · ekran kapalıyken dakikada bir güncellenir</string>
+
+    <string name="notifications_disabled">Kronometre bildirimi kapalı — süreyi göremiyoruz, izin ver</string>
+    <string name="notifications_allow">İzin ver</string>
+    <string name="start_failed">Kronometre arka planda başlatılamadı. Uygulamayı açıkken tekrar dene.</string>
+
+    <string name="lap_header_number">Tur</string>
+    <string name="lap_header_split">Tur süresi</string>
+    <string name="lap_header_total">Toplam</string>
+    <string name="widget_description">Süreyi canlı gösterir; Başlat, Duraklat, Tur ve Sıfırla buradan çalışır.</string>
+
+    <string name="oem_title">Kronometre arka planda çalışsın</string>
+    <string name="oem_title_stock">Pil optimizasyonu muafiyeti</string>
+    <string name="oem_intro">Bu telefon ekran kapandıktan sonra arka plandaki uygulamaları kapatabilir. Aşağıdaki adımlar kronometrenin durmamasını sağlar.</string>
+    <string name="oem_open">Aç</string>
+    <string name="oem_dismiss">Şimdilik kapat</string>
+    <string name="oem_open_failed">Bu ekran bu telefonda açılamadı. Adımı Ayarlar içinden elle yap.</string>
+    <string name="oem_battery_common">Ayarlar → Uygulamalar → Kronometre → Pil → Kısıtlama yok</string>
+
+    <string name="oem_xiaomi_1">Güvenlik → Otomatik başlatma → Kronometre → Aç</string>
+    <string name="oem_xiaomi_2">Ayarlar → Uygulamalar → Kronometre → Pil → Kısıtlama yok</string>
+    <string name="oem_xiaomi_lock">Ayarlar → Bildirimler → Kilit ekranı bildirimleri → Kronometre → Aç ve "İçeriği göster"</string>
+    <string name="oem_xiaomi_3">Son uygulamalar ekranında Kronometre kartını basılı tutup kilitle</string>
+
+    <string name="oem_samsung_1">Pil → Arka plan kullanımı → Hiç kısıtlama</string>
+    <string name="oem_samsung_2">Pil → Arka plan kullanımı sınırları → Hiç uykuya dalmayan uygulamalar → Kronometre ekle</string>
+    <string name="oem_samsung_3">Bildirimler → Kronometre bildirimlerine izin ver</string>
+
+    <string name="oem_huawei_1">Pil → Uygulama başlatma → Kronometre → Otomatik yönetimi kapat, Otomatik başlatma / İkincil başlatma / Arka planda çalışma üçünü de aç</string>
+
+    <string name="oem_oppo_1">Pil → Arka plan etkinliğine izin ver → Kronometre: Arka planda çalıştırmaya izin ver</string>
+    <string name="oem_oppo_2">Otomatik başlatma → Kronometre → Aç (Telefon Yöneticisi → Beyaz liste → Kronometre)</string>
+
+    <string name="oem_vivo_1">Pil → Arka plan yönetimi → Yüksek arka plan tüketimi → Kronometre beyaz listeye al</string>
+    <string name="oem_vivo_2">Otomatik başlatma → Kronometre → Aç</string>
+
+    <string name="oem_asus_1">Otomatik başlatma → Kronometre\'ye izin ver</string>
+
+    <string name="oem_transsion_1">Otomatik yönetim → uygulama listesinden Kronometre\'yi seç, üç izni de aç</string>
+
+    <string name="oem_stock_1">Ayarlar → Uygulamalar → Kronometre → Pil → Kısıtlama yok</string>
+    <string name="settings">Ayarlar</string>
+    <string name="back">Geri</string>
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Sistem varsayılanı</string>
+    <string name="theme_light">Açık</string>
+    <string name="theme_dark">Koyu</string>
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_version">Sürüm</string>
+    <string name="laps_copy">Turları kopyala</string>
+    <string name="laps_clip_label">Turlar</string>
+    <string name="laps_copied">Turlar kopyalandı</string>
+    <string name="settings_stopwatch">Kronometre</string>
+    <string name="settings_centis">Salise göster</string>
+    <string name="settings_centis_hint">Uygulama açıkken süreye salise ekler. Bildirim ve widget etkilenmez.</string>
+    <string name="settings_dim">Ekranı karart</string>
+    <string name="settings_dim_hint">Kronometre çalışırken ekranı açık tutar ve 10 sn dokunulmazsa karartır.</string>
+    <string name="tab_stopwatch">Kronometre</string>
+    <string name="tab_timer">Zamanlayıcı</string>
+    <string name="unit_hours">sa</string>
+    <string name="unit_minutes">dk</string>
+    <string name="unit_seconds">sn</string>
+    <string name="timer_channel_name">Zamanlayıcı</string>
+    <string name="timer_alarm_channel_name">Zamanlayıcı alarmı</string>
+    <string name="timer_running">Zamanlayıcı çalışıyor</string>
+    <string name="timer_paused">Zamanlayıcı duraklatıldı</string>
+    <string name="timer_done">Süre doldu</string>
+    <string name="timer_stop">Durdur</string>
+    <string name="timer_cancel">İptal</string>
+    <string name="timer_add_minute">+1 dk</string>
+    <string name="timer_exact_denied">Tam zamanlı alarm izni kapalı; zamanlayıcı birkaç dakika gecikebilir. Ayarlar → Uygulamalar → Kronometre → Alarmlar ve hatırlatıcılar.</string>
+    <string name="settings_updates">Güncellemeler</string>
+    <string name="settings_check_updates">Güncellemeleri denetle</string>
+    <string name="update_checking">Denetleniyor…</string>
+    <string name="update_up_to_date">En son sürümü kullanıyorsun</string>
+    <string name="update_available">Yeni sürüm var: %1$s</string>
+    <string name="update_download">İndir</string>
+    <string name="update_failed">Denetlenemedi, internet bağlantını kontrol et</string>
+    <string name="settings_github">GitHub sayfası</string>
+    <string name="settings_github_hint">Kaynak kod, sürümler ve hata bildirimi</string>
+</resources>
