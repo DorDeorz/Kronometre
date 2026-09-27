@@ -77,7 +77,7 @@ app/src/main/java/com/oguzh/kronometre/
 
 | Yüzey | Süreyi kim çiziyor | Uygulamanın işi |
 |---|---|---|
-| Bildirim, ekran açık | SystemUI (`setUsesChronometer(true)` + `setWhen`) | Durum değişiminde **1** gönderim |
+| Bildirim, ekran açık | SystemUI (özel görünümdeki `Chronometer`, `RemoteViews.setChronometer`) | Durum değişiminde **1** gönderim |
 | Bildirim, ekran kapalı | Statik `H:MM` metni | Dakika sınırına hizalı **1** `Handler.postDelayed` / dakika |
 | Widget | Launcher sürecindeki `android.widget.Chronometer` (`RemoteViews.setChronometer`) | Durum değişiminde **1** `updateAll()` |
 | Uygulama ekranı | `android.widget.Chronometer` (`AndroidView`) — yalnızca görünürken tıklar | Yok |
@@ -97,6 +97,7 @@ app/src/main/java/com/oguzh/kronometre/
 - Kanal `stopwatch_v2`, `IMPORTANCE_DEFAULT` ama ses/titreşim/rozet yok, `VISIBILITY_PUBLIC`. `IMPORTANCE_LOW` "sessiz" sayılır ve birçok ROM'da ("sessiz bildirimleri kilit ekranında gizle") kilit ekranında gösterilmiyordu. Eski `stopwatch` kanalı silinir.
 - Her gönderim aynı `build(state, interactive)` fonksiyonundan geçer: `setOngoing`, `setSilent`,
   `setOnlyAlertOnce`, `VISIBILITY_PUBLIC` ve **aynı içerikle kurulmuş** `setPublicVersion` her seferinde birlikte.
+- İçerik `DecoratedCustomViewStyle` + `notification_time.xml`: büyük (32sp) `Chronometer` RemoteViews'i, Google Saat bildirimindeki gibi yalnızca süre ve altında küçük bir satır (tur sayısı / "duraklatıldı" / ekran kapalıyken "sa:dk"). `Chronometer` SystemUI sürecinde kendi kendine tıklar; bildirim yine seans başına bir kez gönderilir. Başlık/metin yalnızca özel görünümü desteklemeyen yüzeyler için doldurulur.
 - Çalışırken aksiyonlar: **Duraklat**, **Tur**. Duraklatılmışken: **Sürdür**, **Sıfırla**. Her `PendingIntent` `FLAG_IMMUTABLE`, aksiyona özel `requestCode` taşır ve API 26+'da `getForegroundService` kullanır (servis duraklatılmışken çalışmıyor).
 - Duraklatınca bildirim "Kronometre duraklatıldı" + statik süreyle kalır, servis `STOP_FOREGROUND_DETACH` ile durur (duraklatılmışken çalışan servis, döngü, uyanma yok). **Sıfırla** bildirimi kaldırır.
 
@@ -105,7 +106,7 @@ app/src/main/java/com/oguzh/kronometre/
 `SizeMode.Exact`: süre yazısı ve düğmeler widget'ın gerçek boyutuna göre hesaplanır, boşluk kalmaz.
 Yükseklik 100 dp'nin altındaysa tek satır (süre + düğmeler; dar ise yalnızca birincil düğme),
 üstündeyse sütun (150 dp'den yüksekse üstte durum satırı, ortada büyük süre, altta yuvarlak düğmeler).
-Düğmeler: çalışırken **Sıfırla · Duraklat · Tur**, duraklatılmışken **Sıfırla · Sürdür**, sıfırdayken **Başlat**.
+Düğmeler yuvarlak köşeli ve widget genişliğini doldurur; dar sütunda iki satır (üstte büyük birincil düğme, altta Sıfırla ve Tur). Tur atılınca sürenin altında "Tur N · süre" satırı çıkar. Düğmeler: çalışırken **Sıfırla · Duraklat · Tur**, duraklatılmışken **Sıfırla · Sürdür**, sıfırdayken **Başlat**.
 Boyut değişince yalnızca bir kez yeniden çizilir; saniyelik güncelleme yok.
 Widget 110×40 dp'ye kadar küçültülüp büyütülebilir. Butonlar `actionStartService(..., isForegroundService = true)`,
 widget'ın geri kalanı `clickable(actionStartActivity<MainActivity>())`. Widget içeriği

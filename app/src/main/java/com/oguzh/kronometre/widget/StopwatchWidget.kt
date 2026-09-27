@@ -69,13 +69,13 @@ class StopwatchWidget : GlanceAppWidget() {
 }
 
 private val ROW_LAYOUT_MAX_HEIGHT = 100.dp
-private val HEADER_MIN_HEIGHT = 150.dp
+private val HEADER_MIN_HEIGHT = 220.dp
+private val TWO_ROW_MAX_WIDTH = 240.dp
 private val PADDING = 12.dp
-private val BUTTON_GAP = 12.dp
+private val GAP = 8.dp
 private val HEADER_HEIGHT = 20.dp
 private val LAP_LINE_HEIGHT = 20.dp
-private const val SECONDARY_SCALE = 0.8f
-private const val GAP_RATIO = 0.2f
+private const val SECONDARY_HEIGHT_RATIO = 0.85f
 
 private val TextSecondary = ColorProvider(day = Color(0xFF5A5D57), night = Color(0xFFB5B8B0))
 private val OnSecondary = ColorProvider(day = Color(0xFF1B1C1A), night = Color(0xFFF2F2EE))
@@ -132,8 +132,9 @@ private fun WidgetContent(state: StopwatchState) {
 private fun RowLayout(state: StopwatchState, width: Dp, height: Dp, modifier: GlanceModifier) {
     val all = buttons(state)
     val shown = if (width < 200.dp) listOf(all.first { it.style != ButtonStyle.Secondary }) else all
-    val buttonSize = minOf(height, (width * 0.5f - BUTTON_GAP * shown.size) / shown.size).coerceIn(24.dp, 56.dp)
-    val buttonsWidth = buttonSize * shown.size + BUTTON_GAP * shown.size
+    val buttonHeight = height.coerceIn(32.dp, 64.dp)
+    val buttonWidth = minOf(buttonHeight * 1.3f, (width * 0.5f - GAP * shown.size) / shown.size)
+    val buttonsWidth = (buttonWidth + GAP) * shown.size
     val showLap = state.laps.isNotEmpty() && height >= 56.dp
     val timeHeight = if (showLap) height - LAP_LINE_HEIGHT else height
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
@@ -142,8 +143,8 @@ private fun RowLayout(state: StopwatchState, width: Dp, height: Dp, modifier: Gl
             if (showLap) LapLine(state)
         }
         shown.forEach {
-            Spacer(GlanceModifier.width(BUTTON_GAP))
-            RoundButton(it, buttonSize)
+            Spacer(GlanceModifier.width(GAP))
+            PillButton(it, GlanceModifier.width(buttonWidth).height(buttonHeight), buttonHeight)
         }
     }
 }
@@ -151,14 +152,18 @@ private fun RowLayout(state: StopwatchState, width: Dp, height: Dp, modifier: Gl
 @Composable
 private fun ColumnLayout(state: StopwatchState, width: Dp, height: Dp, modifier: GlanceModifier) {
     val shown = buttons(state)
+    val primary = shown.first { it.style != ButtonStyle.Secondary }
+    val secondaries = shown.filter { it.style == ButtonStyle.Secondary }
+    val twoRows = secondaries.size > 1 && width < TWO_ROW_MAX_WIDTH
     val showHeader = height >= HEADER_MIN_HEIGHT - PADDING * 2
     val showLap = state.laps.isNotEmpty()
-    val headerHeight = if (showHeader) HEADER_HEIGHT else 0.dp
-    val lapHeight = if (showLap) LAP_LINE_HEIGHT else 0.dp
-    val units = 1f + (shown.size - 1) * (SECONDARY_SCALE + GAP_RATIO)
-    val buttonSize = minOf(height * 0.3f, width / units).coerceIn(24.dp, 76.dp)
-    val gap = buttonSize * GAP_RATIO
-    val timeHeight = height - headerHeight - lapHeight - buttonSize - BUTTON_GAP
+    val buttonHeight = (height * if (twoRows) 0.22f else 0.26f).coerceIn(40.dp, 64.dp)
+    val secondaryHeight = if (twoRows) buttonHeight * SECONDARY_HEIGHT_RATIO else buttonHeight
+    val buttonsHeight = if (twoRows) buttonHeight + GAP + secondaryHeight else buttonHeight
+    val timeHeight = height -
+        (if (showHeader) HEADER_HEIGHT else 0.dp) -
+        (if (showLap) LAP_LINE_HEIGHT else 0.dp) -
+        buttonsHeight - GAP
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (showHeader) Header(state)
         Column(
@@ -169,13 +174,23 @@ private fun ColumnLayout(state: StopwatchState, width: Dp, height: Dp, modifier:
             TimeViews(state, timeTextSize(state, width, timeHeight), GlanceModifier.fillMaxWidth())
             if (showLap) LapLine(state)
         }
-        Spacer(GlanceModifier.height(BUTTON_GAP))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            shown.forEachIndexed { index, button ->
-                if (index > 0) Spacer(GlanceModifier.width(gap))
-                val scale = if (button.style == ButtonStyle.Secondary) SECONDARY_SCALE else 1f
-                RoundButton(button, buttonSize * scale)
-            }
+        Spacer(GlanceModifier.height(GAP))
+        if (twoRows) {
+            PillButton(primary, GlanceModifier.fillMaxWidth().height(buttonHeight), buttonHeight)
+            Spacer(GlanceModifier.height(GAP))
+            ButtonRow(secondaries, secondaryHeight)
+        } else {
+            ButtonRow(shown, buttonHeight)
+        }
+    }
+}
+
+@Composable
+private fun ButtonRow(buttons: List<WidgetButton>, height: Dp) {
+    Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        buttons.forEachIndexed { index, button ->
+            if (index > 0) Spacer(GlanceModifier.width(GAP))
+            PillButton(button, GlanceModifier.defaultWeight().height(height), height)
         }
     }
 }
@@ -224,12 +239,11 @@ private fun Header(state: StopwatchState) {
 }
 
 @Composable
-private fun RoundButton(button: WidgetButton, size: Dp) {
+private fun PillButton(button: WidgetButton, modifier: GlanceModifier, height: Dp) {
     val context = LocalContext.current
     val tint = if (button.style == ButtonStyle.Secondary) OnSecondary else OnAccent
     Box(
-        modifier = GlanceModifier
-            .size(size)
+        modifier = modifier
             .background(ImageProvider(button.style.background))
             .clickable(serviceAction(context, button.action)),
         contentAlignment = Alignment.Center,
@@ -237,7 +251,7 @@ private fun RoundButton(button: WidgetButton, size: Dp) {
         Image(
             provider = ImageProvider(button.icon),
             contentDescription = context.getString(button.label),
-            modifier = GlanceModifier.size(size * 0.46f),
+            modifier = GlanceModifier.size(height * 0.5f),
             colorFilter = ColorFilter.tint(tint),
         )
     }

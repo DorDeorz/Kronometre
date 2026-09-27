@@ -7,7 +7,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import android.text.format.DateUtils
+import android.view.View
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.oguzh.kronometre.MainActivity
@@ -49,32 +52,46 @@ class StopwatchNotifier(private val context: Context) {
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setLocalOnly(true)
+            .setShowWhen(false)
+            .setUsesChronometer(false)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setContentIntent(openAppIntent())
+        val views = timeViews(state, interactive, elapsed)
+        builder.setCustomContentView(views).setCustomBigContentView(views)
         if (!state.isRunning) {
             return builder
-                .setContentTitle(context.getString(R.string.notification_title_paused))
-                .setContentText(DateUtils.formatElapsedTime(elapsed / 1000))
-                .setUsesChronometer(false)
-                .setShowWhen(false)
+                .setContentTitle(DateUtils.formatElapsedTime(elapsed / 1000))
+                .setContentText(context.getString(R.string.notification_title_paused))
                 .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_DEFERRED)
                 .addAction(R.drawable.ic_play, context.getString(R.string.action_resume), serviceIntent(StopwatchActions.ACTION_RESUME))
                 .addAction(R.drawable.ic_reset, context.getString(R.string.action_reset), serviceIntent(StopwatchActions.ACTION_RESET))
         }
-        builder.setContentTitle(context.getString(R.string.notification_title))
+        return builder
+            .setContentTitle(context.getString(R.string.notification_title))
+            .setContentText(lapText(state))
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .addAction(R.drawable.ic_pause, context.getString(R.string.action_pause), serviceIntent(StopwatchActions.ACTION_PAUSE))
             .addAction(R.drawable.ic_lap, context.getString(R.string.action_lap), serviceIntent(StopwatchActions.ACTION_LAP))
-        if (interactive) {
-            builder.setUsesChronometer(true)
-                .setShowWhen(true)
-                .setWhen(System.currentTimeMillis() - elapsed)
-                .setContentText(lapText(state))
-        } else {
-            builder.setUsesChronometer(false)
-                .setShowWhen(false)
-                .setContentText(context.getString(R.string.notification_minutes, formatMinutes(elapsed)))
+    }
+
+    private fun timeViews(state: StopwatchState, interactive: Boolean, elapsed: Long): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.notification_time)
+        val live = state.isRunning && interactive
+        views.setChronometer(R.id.notification_chronometer, SystemClock.elapsedRealtime() - elapsed, null, live)
+        views.setViewVisibility(R.id.notification_chronometer, if (live) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.notification_static_time, if (live) View.GONE else View.VISIBLE)
+        views.setTextViewText(
+            R.id.notification_static_time,
+            if (state.isRunning) formatMinutes(elapsed) else DateUtils.formatElapsedTime(elapsed / 1000),
+        )
+        val subtitle = when {
+            !state.isRunning -> context.getString(R.string.notification_title_paused)
+            !interactive -> context.getString(R.string.notification_minutes_hint)
+            else -> lapText(state)
         }
-        return builder
+        views.setTextViewText(R.id.notification_subtitle, subtitle)
+        views.setViewVisibility(R.id.notification_subtitle, if (subtitle == null) View.GONE else View.VISIBLE)
+        return views
     }
 
     private fun lapText(state: StopwatchState): String? =

@@ -20,7 +20,7 @@
     <string name="notification_title">Kronometre çalışıyor</string>
     <string name="notification_title_paused">Kronometre duraklatıldı</string>
     <string name="notification_laps">%1$d tur</string>
-    <string name="notification_minutes">Geçen süre %1$s (sa:dk)</string>
+    <string name="notification_minutes_hint">sa:dk · ekran kapalıyken dakikada bir güncellenir</string>
 
     <string name="notifications_disabled">Kronometre bildirimi kapalı — süreyi göremiyoruz, izin ver</string>
     <string name="notifications_allow">İzin ver</string>
