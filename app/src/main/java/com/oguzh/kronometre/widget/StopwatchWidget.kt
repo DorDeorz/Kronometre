@@ -11,6 +11,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +46,7 @@ import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
+import androidx.glance.color.ColorProvider
 import com.oguzh.kronometre.MainActivity
 import com.oguzh.kronometre.R
 import com.oguzh.kronometre.data.StopwatchRepository
@@ -70,6 +71,11 @@ private val ROW_LAYOUT_MAX_HEIGHT = 100.dp
 private val HEADER_MIN_HEIGHT = 150.dp
 private val PADDING = 12.dp
 private val BUTTON_GAP = 12.dp
+
+private val TextSecondary = ColorProvider(day = Color(0xFF5A5D57), night = Color(0xFFB5B8B0))
+private val OnSecondary = ColorProvider(day = Color(0xFF1B1C1A), night = Color(0xFFF2F2EE))
+private val OnAccent = ColorProvider(day = Color.White, night = Color.White)
+private val Running = ColorProvider(day = Color(0xFF2E7D32), night = Color(0xFF388E3C))
 
 private enum class ButtonStyle(@DrawableRes val background: Int) {
     Start(R.drawable.widget_button_start),
@@ -177,13 +183,13 @@ private fun Header(state: StopwatchState) {
             provider = ImageProvider(R.drawable.ic_stopwatch),
             contentDescription = null,
             modifier = GlanceModifier.size(16.dp),
-            colorFilter = ColorFilter.tint(ColorProvider(if (state.isRunning) R.color.widget_start else R.color.widget_text_secondary)),
+            colorFilter = ColorFilter.tint(if (state.isRunning) Running else TextSecondary),
         )
         Spacer(GlanceModifier.width(6.dp))
         Text(
             text = context.getString(status),
             style = TextStyle(
-                color = ColorProvider(R.color.widget_text_secondary),
+                color = TextSecondary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
             ),
@@ -194,7 +200,7 @@ private fun Header(state: StopwatchState) {
 @Composable
 private fun RoundButton(button: WidgetButton, size: Dp) {
     val context = LocalContext.current
-    val tint = if (button.style == ButtonStyle.Secondary) R.color.widget_on_secondary else android.R.color.white
+    val tint = if (button.style == ButtonStyle.Secondary) OnSecondary else OnAccent
     Box(
         modifier = GlanceModifier
             .size(size)
@@ -206,7 +212,7 @@ private fun RoundButton(button: WidgetButton, size: Dp) {
             provider = ImageProvider(button.icon),
             contentDescription = context.getString(button.label),
             modifier = GlanceModifier.size(size * 0.46f),
-            colorFilter = ColorFilter.tint(ColorProvider(tint)),
+            colorFilter = ColorFilter.tint(tint),
         )
     }
 }

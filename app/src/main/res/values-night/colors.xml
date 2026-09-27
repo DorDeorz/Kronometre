@@ -2,9 +2,7 @@
 <resources>
     <color name="widget_background">#FF1F211E</color>
     <color name="widget_text">#FFF2F2EE</color>
-    <color name="widget_text_secondary">#FFB5B8B0</color>
     <color name="widget_secondary">#FF3A3D38</color>
-    <color name="widget_on_secondary">#FFF2F2EE</color>
     <color name="widget_start">#FF388E3C</color>
     <color name="widget_stop">#FFD32F2F</color>
 </resources>
