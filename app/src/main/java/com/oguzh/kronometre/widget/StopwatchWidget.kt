@@ -64,13 +64,11 @@ class StopwatchWidget : GlanceAppWidget() {
             }
         }
     }
-
-    companion object {
-        val COMPACT = DpSize(110.dp, 40.dp)
-        val MEDIUM = DpSize(150.dp, 100.dp)
-        val WIDE = DpSize(250.dp, 100.dp)
-    }
 }
+
+private val COMPACT = DpSize(110.dp, 40.dp)
+private val MEDIUM = DpSize(150.dp, 100.dp)
+private val WIDE = DpSize(250.dp, 100.dp)
 
 private data class WidgetAction(val icon: Int, val label: Int, val action: String)
 
