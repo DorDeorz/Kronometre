@@ -280,3 +280,9 @@ adb shell am start -W -n com.oguzh.kronometre/.MainActivity   # TotalTime < 300 
 | Redmi Note 12 Pro 4G | ölçülmedi | ölçülmedi | ölçülmedi |
 
 Ham çıktılar geldikçe `measurements/` altına eklenecek.
+
+## Sürüm ve yayın
+
+- `versionName` / `versionCode` Gradle özelliklerinden gelir (`-PappVersionName`, `-PappVersionCode`); yerelde varsayılan `1.0.0` / `1`.
+- `KRONOMETRE_KEYSTORE` (+ `_KEYSTORE_PASSWORD`, `_KEY_ALIAS`, `_KEY_PASSWORD`) ortam değişkenleri varsa release yükleme anahtarıyla, yoksa debug anahtarıyla imzalanır.
+- `v*` etiketi itilince `.github/workflows/release.yml` imzalı `.aab` ve `.apk` üretip GitHub Release'e ekler. `versionCode = 100 + run_number` her çalıştırmada artar. Gereken secret'lar: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
