@@ -39,7 +39,35 @@ uygulamanın kendi pil ve işlemci kullanımı neredeyse sıfırda kalır.
 
 ## Ekran görüntüleri
 
-_Yakında eklenecek._
+<p align="center">
+  <img src="docs/images/kronometre.png" width="240" alt="Kronometre: çalışan süre ve tur listesi">
+  &nbsp;
+  <img src="docs/images/zamanlayici.png" width="240" alt="Zamanlayıcı: tuş takımıyla süre girişi">
+  &nbsp;
+  <img src="docs/images/ayarlar.png" width="240" alt="Ayarlar ekranı">
+</p>
+
+<p align="center"><b>Kronometre</b> · <b>Zamanlayıcı</b> · <b>Ayarlar</b></p>
+
+### Widget
+
+<p align="center">
+  <img src="docs/images/widget-calisiyor.png" width="180" alt="Widget: kronometre çalışırken">
+  &nbsp;&nbsp;
+  <img src="docs/images/widget-bos.png" width="180" alt="Widget: kronometre boştayken">
+</p>
+
+<p align="center">Çalışırken duraklat, sıfırla ve tur; boştayken tek bir başlat düğmesi.</p>
+
+### Bildirim
+
+<p align="center">
+  <img src="docs/images/bildirim-dar.png" width="420" alt="Daraltılmış bildirim: sadece büyük süre">
+  <br><br>
+  <img src="docs/images/bildirim-genis.png" width="420" alt="Genişletilmiş bildirim: süre, Duraklat ve Tur düğmeleri">
+</p>
+
+<p align="center">Daraltılmış hâlde sadece süre, genişletince Duraklat ve Tur düğmeleri.</p>
 
 ## Kurulum
 
