@@ -296,7 +296,18 @@ Ham çıktılar geldikçe `measurements/` altına eklenecek.
 
 ## Ayarlar (1.0.0 ile eklendi)
 
-Kullanıcı kararıyla ayarlar ekranı eklendi (CLAUDE.md "Ayar ekranı yok" kuralından bilinçli sapma). Ayarlar ayrı `settings` DataStore'unda: `theme`, `show_centis`, `dim_screen`. Kronometre DataStore'u yine 3 anahtar.
+Kullanıcı kararıyla ayarlar ekranı eklendi (CLAUDE.md "Ayar ekranı yok" kuralından bilinçli sapma). Ayarlar ayrı `settings` DataStore'unda: `theme`, `show_centis`, `dim_screen`, `dynamic_color` (1.1.0). Kronometre DataStore'u yine 3 anahtar.
 
 - **Salise:** yalnızca uygulama ön plandayken, çalışırken her karede `withFrameMillis` ile yeniden çizilir. Uygulama arka plandayken Compose kareleri durur; bildirim ve widget etkilenmez. Kapatılınca eski `Chronometer` görünümü kullanılır.
 - **Güncelleme denetimi:** `api.github.com/repos/DorDeorz/Kronometre/releases/latest` isteği, yalnızca kullanıcı dokununca.
+
+## Tasarım (1.1.0 ile Adımsayar'a uyarlandı)
+
+Kullanıcı isteğiyle görünüm [Adımsayar](https://github.com/DorDeorz/adimsayar) ile aynı dile getirildi.
+
+- **Renkler:** Adımsayar'ın yeşil şeması (`ui/theme/Theme.kt`: `primary`, `primaryContainer`, `surfaceContainer`, `surfaceContainerHighest`). Android 12+'da varsayılan olarak duvar kağıdı renkleri; ayarlardaki **Telefonun renklerini kullan** (`settings` DataStore'unda `dynamic_color`) kapatılınca yeşil şema. Başlat/Sürdür `primary`, Duraklat `primaryContainer`, ikincil düğmeler `surfaceContainerHighest`. Kırmızı yalnızca en yavaş tur ve dolan zamanlayıcıda.
+- **Yazı:** rakamlar kalın ve `tnum` (sabit genişlik). Başlıklar `headlineMedium` kalın.
+- **Ana ekran:** üstte büyük sekme başlığı + ayarlar düğmesi, altta `NavigationBar` (Kronometre / Zamanlayıcı).
+- **Kronometre:** süre bir halkanın içinde. Salise açıkken halka her dakikayı doldurur; bu, salisenin zaten çalışan kare döngüsünü kullanır, ek döngü yok. Salise kapalıyken halka çalışırken dolu, duraklatılınca o andaki dakika oranında durur (`Chronometer` görünümü kendi tik'ini atar, Compose yeniden çizilmez). Turlar varsa "Tur sayısı" ve "En hızlı tur" kartları ile yuvarlak köşeli tur kartı.
+- **Widget:** `GlanceTheme` (dinamik renk açıksa sistem, kapalıysa aynı yeşil şema), `widgetBackground` zemin, 24 dp köşe, hap biçimli düğmeler. Süre yazısının rengi `widget_text` (`values` / `values-night`) RemoteViews XML'inde; gece modu başlatıcı tarafından çözülür. Renk ayarı değişince widget bir kez yeniden çizilir.
+- **Sınırlama:** Glance `cornerRadius` yalnızca Android 12+'da uygulanır; Android 6–11'de widget ve düğme köşeleri düz görünür (Adımsayar'da da aynı).

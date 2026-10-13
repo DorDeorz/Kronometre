@@ -11,11 +11,9 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -46,7 +44,16 @@ import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.color.ColorProvider
+import androidx.glance.unit.ColorProvider
+import androidx.glance.GlanceTheme
+import androidx.glance.appwidget.appWidgetBackground
+import androidx.glance.appwidget.cornerRadius
+import androidx.glance.material3.ColorProviders
+import android.os.Build
+import com.dordeorz.kronometre.data.SettingsRepository
+import com.dordeorz.kronometre.ui.theme.DarkColors
+import com.dordeorz.kronometre.ui.theme.LightColors
+import kotlinx.coroutines.flow.first
 import com.dordeorz.kronometre.MainActivity
 import com.dordeorz.kronometre.R
 import com.dordeorz.kronometre.data.StopwatchRepository
@@ -61,9 +68,14 @@ class StopwatchWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = StopwatchRepository.get(context)
         repository.load()
+        val settingsFlow = SettingsRepository.get(context).settings
+        val initialSettings = settingsFlow.first()
         provideContent {
             val state by repository.state.collectAsState()
-            WidgetContent(state)
+            val settings by settingsFlow.collectAsState(initialSettings)
+            WidgetTheme(settings.dynamicColor) {
+                WidgetContent(state)
+            }
         }
     }
 }
@@ -77,15 +89,31 @@ private val HEADER_HEIGHT = 20.dp
 private val LAP_LINE_HEIGHT = 20.dp
 private const val SECONDARY_HEIGHT_RATIO = 0.85f
 
-private val TextSecondary = ColorProvider(day = Color(0xFF5A5D57), night = Color(0xFFB5B8B0))
-private val OnSecondary = ColorProvider(day = Color(0xFF1B1C1A), night = Color(0xFFF2F2EE))
-private val OnAccent = ColorProvider(day = Color.White, night = Color.White)
-private val Running = ColorProvider(day = Color(0xFF2E7D32), night = Color(0xFF388E3C))
+private val AppColors = ColorProviders(light = LightColors, dark = DarkColors)
 
-private enum class ButtonStyle(@DrawableRes val background: Int) {
-    Start(R.drawable.widget_button_start),
-    Stop(R.drawable.widget_button_stop),
-    Secondary(R.drawable.widget_button_secondary),
+@Composable
+private fun WidgetTheme(dynamicColor: Boolean, content: @Composable () -> Unit) {
+    if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        GlanceTheme(content = content)
+    } else {
+        GlanceTheme(colors = AppColors, content = content)
+    }
+}
+
+private enum class ButtonStyle { Start, Stop, Secondary }
+
+@Composable
+private fun ButtonStyle.container(): ColorProvider = when (this) {
+    ButtonStyle.Start -> GlanceTheme.colors.primary
+    ButtonStyle.Stop -> GlanceTheme.colors.primaryContainer
+    ButtonStyle.Secondary -> GlanceTheme.colors.secondaryContainer
+}
+
+@Composable
+private fun ButtonStyle.content(): ColorProvider = when (this) {
+    ButtonStyle.Start -> GlanceTheme.colors.onPrimary
+    ButtonStyle.Stop -> GlanceTheme.colors.onPrimaryContainer
+    ButtonStyle.Secondary -> GlanceTheme.colors.onSecondaryContainer
 }
 
 private data class WidgetButton(
@@ -118,7 +146,9 @@ private fun WidgetContent(state: StopwatchState) {
     val size = LocalSize.current
     val modifier = GlanceModifier
         .fillMaxSize()
-        .background(ImageProvider(R.drawable.widget_background))
+        .appWidgetBackground()
+        .cornerRadius(24.dp)
+        .background(GlanceTheme.colors.widgetBackground)
         .clickable(actionStartActivity<MainActivity>())
         .padding(PADDING)
     if (size.height < ROW_LAYOUT_MAX_HEIGHT) {
@@ -204,7 +234,7 @@ private fun LapLine(state: StopwatchState) {
         text = context.getString(R.string.widget_last_lap, count, formatLap(split)),
         maxLines = 1,
         modifier = GlanceModifier.height(LAP_LINE_HEIGHT),
-        style = TextStyle(color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+        style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Medium),
     )
 }
 
@@ -224,13 +254,13 @@ private fun Header(state: StopwatchState) {
             provider = ImageProvider(R.drawable.ic_stopwatch),
             contentDescription = null,
             modifier = GlanceModifier.size(16.dp),
-            colorFilter = ColorFilter.tint(if (state.isRunning) Running else TextSecondary),
+            colorFilter = ColorFilter.tint(if (state.isRunning) GlanceTheme.colors.primary else GlanceTheme.colors.onSurfaceVariant),
         )
         Spacer(GlanceModifier.width(6.dp))
         Text(
             text = context.getString(status),
             style = TextStyle(
-                color = TextSecondary,
+                color = GlanceTheme.colors.onSurfaceVariant,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
             ),
@@ -241,10 +271,10 @@ private fun Header(state: StopwatchState) {
 @Composable
 private fun PillButton(button: WidgetButton, modifier: GlanceModifier, height: Dp) {
     val context = LocalContext.current
-    val tint = if (button.style == ButtonStyle.Secondary) OnSecondary else OnAccent
     Box(
         modifier = modifier
-            .background(ImageProvider(button.style.background))
+            .cornerRadius(height / 2)
+            .background(button.style.container())
             .clickable(serviceAction(context, button.action)),
         contentAlignment = Alignment.Center,
     ) {
@@ -252,7 +282,7 @@ private fun PillButton(button: WidgetButton, modifier: GlanceModifier, height: D
             provider = ImageProvider(button.icon),
             contentDescription = context.getString(button.label),
             modifier = GlanceModifier.size(height * 0.5f),
-            colorFilter = ColorFilter.tint(tint),
+            colorFilter = ColorFilter.tint(button.style.content()),
         )
     }
 }
@@ -266,7 +296,7 @@ private fun TimeViews(state: StopwatchState, textDp: Float, modifier: GlanceModi
 }
 
 private fun timeTextSize(state: StopwatchState, width: Dp, height: Dp): Float {
-    val ems = if (state.isRunning || state.currentElapsedMs() >= DateUtils.HOUR_IN_MILLIS) 4.4f else 3.4f
+    val ems = if (state.isRunning || state.currentElapsedMs() >= DateUtils.HOUR_IN_MILLIS) 4.9f else 3.8f
     return minOf(width.value / ems, height.value * 0.8f).coerceIn(14f, 120f)
 }
 
@@ -275,11 +305,9 @@ private fun serviceAction(context: Context, action: String): Action =
 
 private fun timeViews(context: Context, state: StopwatchState, textDp: Float): RemoteViews {
     val views = RemoteViews(context.packageName, R.layout.widget_remote_chronometer)
-    val color = ContextCompat.getColor(context, R.color.widget_text)
     val elapsed = state.currentElapsedMs()
     val base = SystemClock.elapsedRealtime() - elapsed
     for (id in intArrayOf(R.id.widget_chronometer, R.id.widget_static_time)) {
-        views.setTextColor(id, color)
         views.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_DIP, textDp)
     }
     if (state.isRunning) {

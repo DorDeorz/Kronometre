@@ -14,6 +14,6 @@
         android:fillColor="@color/widget_preview_accent"
         android:pathData="M28,66h92a10,10 0,0 1,10 10v4a10,10 0,0 1,-10 10h-92a10,10 0,0 1,-10 -10v-4a10,10 0,0 1,10 -10z" />
     <path
-        android:fillColor="#FF5A5D57"
+        android:fillColor="@color/widget_preview_secondary"
         android:pathData="M150,66h72a10,10 0,0 1,10 10v4a10,10 0,0 1,-10 10h-72a10,10 0,0 1,-10 -10v-4a10,10 0,0 1,10 -10z" />
 </vector>

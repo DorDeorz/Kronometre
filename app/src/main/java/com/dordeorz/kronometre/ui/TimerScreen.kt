@@ -13,7 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,7 +39,6 @@ import com.dordeorz.kronometre.R
 import com.dordeorz.kronometre.timer.TimerState
 import com.dordeorz.kronometre.timer.TimerStatus
 import com.dordeorz.kronometre.ui.theme.KronometreTheme
-import com.dordeorz.kronometre.ui.theme.actionColors
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -112,7 +112,7 @@ private fun DigitsDisplay(digits: String) {
         for (i in 0 until 3) {
             val start = i * 2
             val filled = 6 - digits.length <= start + 1
-            withStyle(SpanStyle(color = if (filled) active else muted, fontSize = 52.sp, fontWeight = FontWeight.Light)) {
+            withStyle(SpanStyle(color = if (filled) active else muted, fontSize = 52.sp, fontWeight = FontWeight.Bold)) {
                 append(padded.substring(start, start + 2))
             }
             withStyle(SpanStyle(color = muted, fontSize = 20.sp)) { append(units[i]) }
@@ -141,8 +141,16 @@ private fun Keypad(onDigit: (Char) -> Unit, onDelete: () -> Unit, modifier: Modi
 
 @Composable
 private fun KeyButton(label: String, modifier: Modifier, onClick: () -> Unit) {
-    FilledTonalButton(onClick = onClick, modifier = modifier.aspectRatio(1.6f)) {
-        Text(label, fontSize = 24.sp)
+    FilledTonalButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        modifier = modifier.aspectRatio(1.6f),
+    ) {
+        Text(label, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -151,8 +159,8 @@ private fun StartButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifie
     RoundAction(
         icon = R.drawable.ic_play,
         label = stringResource(R.string.action_start),
-        containerColor = actionColors().start,
-        contentColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
         size = 80.dp,
         enabled = enabled,
         onClick = onClick,
@@ -177,25 +185,23 @@ private fun TimerRunning(
     }
     val ringing = state.status == TimerStatus.Ringing
     val progress = if (state.durationMs > 0L) remaining.toFloat() / state.durationMs else 0f
-    val colors = actionColors()
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly,
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.widthIn(max = 300.dp).fillMaxWidth().aspectRatio(1f)) {
-            CircularProgressIndicator(
-                progress = { progress },
+            ProgressRing(
+                fraction = if (ringing) 1f else progress,
+                stroke = 18.dp,
                 modifier = Modifier.fillMaxSize(),
-                strokeWidth = 10.dp,
-                color = if (ringing) colors.pause else colors.start,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                color = if (ringing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = if (ringing) stringResource(R.string.timer_done) else DateUtils.formatElapsedTime((remaining + 999L) / 1000L),
-                    fontSize = if (ringing) 32.sp else 56.sp,
-                    fontWeight = FontWeight.Light,
+                    fontSize = if (ringing) 32.sp else 52.sp,
+                    fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.displayMedium.copy(fontFeatureSettings = "tnum"),
                 )
                 TextButton(onClick = onAddMinute) { Text(stringResource(R.string.timer_add_minute)) }
@@ -205,8 +211,8 @@ private fun TimerRunning(
             RoundAction(
                 icon = R.drawable.ic_reset,
                 label = stringResource(if (ringing) R.string.timer_stop else R.string.timer_cancel),
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.onSurface,
                 size = 64.dp,
                 enabled = true,
                 onClick = onCancel,
@@ -216,8 +222,8 @@ private fun TimerRunning(
                 RoundAction(
                     icon = if (running) R.drawable.ic_pause else R.drawable.ic_play,
                     label = stringResource(if (running) R.string.action_pause else R.string.action_resume),
-                    containerColor = if (running) colors.pause else colors.start,
-                    contentColor = MaterialTheme.colorScheme.surface,
+                    containerColor = if (running) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
+                    contentColor = if (running) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary,
                     size = 88.dp,
                     enabled = true,
                     onClick = onToggle,

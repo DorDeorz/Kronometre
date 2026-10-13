@@ -16,6 +16,7 @@ data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.System,
     val showCentis: Boolean = true,
     val dimScreen: Boolean = true,
+    val dynamicColor: Boolean = true,
 )
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -27,6 +28,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             themeMode = ThemeMode.entries.firstOrNull { it.name == prefs[THEME] } ?: ThemeMode.System,
             showCentis = prefs[SHOW_CENTIS] ?: true,
             dimScreen = prefs[DIM_SCREEN] ?: true,
+            dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
         )
     }
 
@@ -42,10 +44,15 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[DIM_SCREEN] = value }
     }
 
+    suspend fun setDynamicColor(value: Boolean) {
+        dataStore.edit { it[DYNAMIC_COLOR] = value }
+    }
+
     companion object {
         private val THEME = stringPreferencesKey("theme")
         private val SHOW_CENTIS = booleanPreferencesKey("show_centis")
         private val DIM_SCREEN = booleanPreferencesKey("dim_screen")
+        private val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
 
         @Volatile
         private var instance: SettingsRepository? = null
