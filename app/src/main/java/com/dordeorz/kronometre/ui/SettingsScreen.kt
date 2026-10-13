@@ -1,5 +1,6 @@
 package com.dordeorz.kronometre.ui
 
+import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.dordeorz.kronometre.R
 import com.dordeorz.kronometre.data.AppSettings
@@ -43,6 +45,7 @@ fun SettingsScreen(
     onThemeModeChange: (ThemeMode) -> Unit,
     onShowCentisChange: (Boolean) -> Unit,
     onDimScreenChange: (Boolean) -> Unit,
+    onDynamicColorChange: (Boolean) -> Unit,
     updateStatus: UpdateStatus,
     onCheckUpdates: () -> Unit,
     onOpenUrl: (String) -> Unit,
@@ -63,7 +66,7 @@ fun SettingsScreen(
                 IconButton(onClick = onBack) {
                     Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = stringResource(R.string.back))
                 }
-                Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineMedium)
             }
             SectionTitle(stringResource(R.string.settings_theme))
             Column(Modifier.selectableGroup()) {
@@ -84,6 +87,14 @@ fun SettingsScreen(
                         Text(stringResource(themeLabel(mode)), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                SwitchRow(
+                    title = stringResource(R.string.settings_dynamic_color),
+                    hint = stringResource(R.string.settings_dynamic_color_hint),
+                    checked = settings.dynamicColor,
+                    onCheckedChange = onDynamicColorChange,
+                )
             }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionTitle(stringResource(R.string.settings_stopwatch))
@@ -190,6 +201,7 @@ private fun SectionTitle(text: String) {
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+        fontWeight = FontWeight.SemiBold,
     )
 }
 
@@ -209,6 +221,7 @@ private fun SettingsScreenPreview() {
             onThemeModeChange = {},
             onShowCentisChange = {},
             onDimScreenChange = {},
+            onDynamicColorChange = {},
             updateStatus = UpdateStatus.Available("1.0.1", ""),
             onCheckUpdates = {},
             onOpenUrl = {},

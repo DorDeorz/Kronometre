@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import android.text.format.DateUtils
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -99,91 +101,85 @@ fun StopwatchContent(
     oemCard: @Composable () -> Unit,
     showCentis: Boolean = false,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-            val landscape = maxWidth > maxHeight
-            Column(modifier = Modifier.fillMaxSize()) {
-                if (!notificationsEnabled) {
-                    MessageBanner(
-                        message = stringResource(R.string.notifications_disabled),
-                        actionLabel = stringResource(R.string.notifications_allow),
-                        onAction = onOpenNotificationSettings,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-                if (startFailed) {
-                    MessageBanner(
-                        message = stringResource(R.string.start_failed),
-                        actionLabel = stringResource(R.string.ok),
-                        onAction = onDismissError,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-                if (landscape) {
-                    Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                        TimerPanel(
-                            state = state,
-                            showCentis = showCentis,
-                            timeSp = 60f,
-                            onToggle = onToggle,
-                            onLap = onLap,
-                            onReset = onReset,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                        )
-                        LapList(
-                            laps = state.laps,
-                            header = { Box(Modifier.padding(vertical = 8.dp)) { oemCard() } },
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                        )
-                    }
-                } else {
-                    Box(Modifier.padding(top = 8.dp)) { oemCard() }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        val landscape = maxWidth > maxHeight
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (!notificationsEnabled) {
+                MessageBanner(
+                    message = stringResource(R.string.notifications_disabled),
+                    actionLabel = stringResource(R.string.notifications_allow),
+                    onAction = onOpenNotificationSettings,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            if (startFailed) {
+                MessageBanner(
+                    message = stringResource(R.string.start_failed),
+                    actionLabel = stringResource(R.string.ok),
+                    onAction = onDismissError,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            if (landscape) {
+                Row(modifier = Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Column(
-                        modifier = Modifier.weight(if (state.laps.isEmpty()) 1f else 0.9f).fillMaxWidth(),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.SpaceEvenly,
                     ) {
-                        TimeDisplay(state = state, showCentis = showCentis, modifier = Modifier.fillMaxWidth())
-                        StatusText(state = state, modifier = Modifier.padding(top = 4.dp))
+                        RingClock(state, showCentis, Modifier.weight(1f, fill = false).padding(top = 8.dp))
+                        ControlRow(state = state, onToggle = onToggle, onLap = onLap, onReset = onReset, modifier = Modifier.padding(bottom = 8.dp))
                     }
-                    if (state.laps.isNotEmpty()) {
-                        LapList(laps = state.laps, modifier = Modifier.weight(1f).fillMaxWidth())
-                    }
-                    ControlRow(
-                        state = state,
-                        onToggle = onToggle,
-                        onLap = onLap,
-                        onReset = onReset,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 32.dp),
+                    LapList(
+                        laps = state.laps,
+                        header = { Box(Modifier.padding(top = 8.dp)) { oemCard() } },
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                 }
+            } else {
+                Box(Modifier.padding(top = 8.dp)) { oemCard() }
+                Box(
+                    modifier = Modifier.weight(if (state.laps.isEmpty()) 1f else 0.9f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    RingClock(state, showCentis, Modifier.padding(vertical = 8.dp))
+                }
+                if (state.laps.isNotEmpty()) {
+                    LapList(laps = state.laps, modifier = Modifier.weight(1f).fillMaxWidth())
+                }
+                ControlRow(
+                    state = state,
+                    onToggle = onToggle,
+                    onLap = onLap,
+                    onReset = onReset,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun TimerPanel(
-    state: StopwatchState,
-    showCentis: Boolean,
-    timeSp: Float,
-    onToggle: () -> Unit,
-    onLap: () -> Unit,
-    onReset: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            TimeDisplay(state = state, textSp = timeSp, showCentis = showCentis, modifier = Modifier.fillMaxWidth())
-            StatusText(state = state, modifier = Modifier.padding(top = 4.dp))
+private fun RingClock(state: StopwatchState, showCentis: Boolean, modifier: Modifier = Modifier) {
+    val now = rememberFrameClock(state, showCentis)
+    BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+        val ring = minOf(maxWidth, maxHeight, MAX_RING)
+        val stroke = ring * RING_STROKE_RATIO
+        val hours = state.currentElapsedMs(now) >= DateUtils.HOUR_IN_MILLIS || (!showCentis && state.isRunning)
+        val ems = (if (hours) 4.4f else 3.4f) + (if (showCentis) 1.6f else 0f)
+        val textDp = ((ring - stroke * 2).value * 0.86f / ems).coerceAtMost(64f)
+        Box(modifier = Modifier.size(ring), contentAlignment = Alignment.Center) {
+            ProgressRing(fraction = ringFraction(state, now, showCentis), stroke = stroke, modifier = Modifier.fillMaxSize())
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                TimeDisplay(state = state, now = now, textDp = textDp, showCentis = showCentis, modifier = Modifier.fillMaxWidth())
+                StatusText(state = state, modifier = Modifier.padding(top = 4.dp))
+            }
         }
-        ControlRow(state = state, onToggle = onToggle, onLap = onLap, onReset = onReset)
     }
 }
+
+private val MAX_RING = 300.dp
+private const val RING_STROKE_RATIO = 0.06f
 
 @Preview(showBackground = true)
 @Composable

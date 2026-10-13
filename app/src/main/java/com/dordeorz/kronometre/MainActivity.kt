@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.Dark -> true
             }
             LaunchedEffect(appSettings.dimScreen) { dimController.enabled = appSettings.dimScreen }
-            KronometreTheme(darkTheme = dark) {
+            KronometreTheme(darkTheme = dark, dynamicColor = appSettings.dynamicColor) {
                 if (showSettings) {
                     BackHandler { showSettings = false }
                     SettingsScreen(
@@ -94,6 +94,12 @@ class MainActivity : ComponentActivity() {
                         onThemeModeChange = { mode -> lifecycleScope.launch { settings.setThemeMode(mode) } },
                         onShowCentisChange = { value -> lifecycleScope.launch { settings.setShowCentis(value) } },
                         onDimScreenChange = { value -> lifecycleScope.launch { settings.setDimScreen(value) } },
+                        onDynamicColorChange = { value ->
+                            lifecycleScope.launch {
+                                settings.setDynamicColor(value)
+                                StopwatchWidget().updateAll(applicationContext)
+                            }
+                        },
                         updateStatus = updateStatus,
                         onCheckUpdates = {
                             updateStatus = UpdateStatus.Checking

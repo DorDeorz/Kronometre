@@ -29,12 +29,13 @@ uygulamanın kendi pil ve işlemci kullanımı neredeyse sıfırda kalır.
 
 | | |
 |---|---|
-| ⏱ **Kronometre** | Başlat, duraklat, tur al, sıfırla. En hızlı tur yeşil, en yavaş tur kırmızı gösterilir. Turlar tek dokunuşla panoya kopyalanır. Uygulama açıkken salise gösterilir. |
+| ⏱ **Kronometre** | Başlat, duraklat, tur al, sıfırla. Süre bir halkanın içinde gösterilir; salise açıkken halka her dakikayı doldurur. Tur sayısı ve en hızlı tur kartlarda, en hızlı tur vurgulu, en yavaş tur kırmızı gösterilir. Turlar tek dokunuşla panoya kopyalanır. Uygulama açıkken salise gösterilir. |
 | ⏲ **Zamanlayıcı** | Tuş takımıyla süre gir, başlat. Bildirimden duraklat, +1 dk ekle ya da iptal et. Süre dolunca alarm sesi ve titreşimle haber verir. |
 | 🔔 **Bildirim** | Büyük, canlı süre. Kilit ekranında da görünür ve kapatılamaz. Duraklatınca Sürdür ve Sıfırla düğmeleri çıkar. |
 | 🧩 **Widget** | Yeniden boyutlandırılabilir. Süre ve düğmeler widget'ın boyutuna göre büyür. Başlat, Duraklat, Tur ve Sıfırla doğrudan widget'tan çalışır. |
 | 🌙 **Ekran karartma** | Kronometre çalışırken 10 saniye dokunulmazsa ekran kararır, dokununca geri gelir. Ayarlardan kapatılabilir. |
-| ⚙️ **Ayarlar** | Açık / koyu / sistem teması, salise, ekran karartma, güncelleme denetimi ve GitHub sayfası. |
+| 🎨 **Tasarım** | Adımsayar ile aynı görünüm: kalın rakamlar, yuvarlak kartlar, alt gezinme çubuğu. Android 12 ve sonrasında renkler duvar kağıdından alınır (widget dahil); kapatılınca yeşil tema kullanılır. |
+| ⚙️ **Ayarlar** | Açık / koyu / sistem teması, telefonun renklerini kullan, salise, ekran karartma, güncelleme denetimi ve GitHub sayfası. |
 | 🔋 **Pil yardımı** | Xiaomi, Samsung, Huawei, Oppo, Vivo gibi uygulamaları arka planda kapatan markalarda hangi ayarın açılması gerektiğini gösterir. |
 
 ## Ekran görüntüleri
@@ -48,6 +49,8 @@ uygulamanın kendi pil ve işlemci kullanımı neredeyse sıfırda kalır.
 </p>
 
 <p align="center"><b>Kronometre</b> · <b>Zamanlayıcı</b> · <b>Ayarlar</b></p>
+
+<p align="center"><i>Ekran görüntüleri 1.0.x sürümünden; 1.1.0 ile tasarım Adımsayar'a uyarlandı.</i></p>
 
 ### Widget
 
