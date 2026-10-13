@@ -12,14 +12,16 @@ for apk in app/build/outputs/apk/release/*.apk app/build/outputs/apk/debug/*.apk
   sleep 5
   sleep 15
   adb logcat -d > "smoke/$name.txt"
-  pid_lines=$(grep -E " [EW] (GlanceAppWidget|Glance|WM-|AndroidRuntime|System.err)" "smoke/$name.txt" | head -60)
+  pid=$(adb shell pidof "$PKG" | tr -d '\r')
+  awk -v p="$pid" 'p != "" && $3 == p' "smoke/$name.txt" > "smoke/$name-app.txt"
+  pid_lines=$(grep -E " [EW] (GlanceAppWidget|Glance|WM-|AndroidRuntime|System.err)" "smoke/$name-app.txt" | head -60)
   if [ -n "$pid_lines" ]; then
     echo "::warning::$name widget uyarilari"
     echo "$pid_lines"
   fi
-  if grep -qE "Error in Glance App Widget|GlanceAppWidget.*Exception|WM-WorkerWrapper.*(failed|Exception)|Didn.t find WorkSpec" "smoke/$name.txt"; then
+  if grep -qE "Error in Glance App Widget|GlanceAppWidget.*Exception|WM-WorkerWrapper.*(failed|Exception)|Didn.t find WorkSpec" "smoke/$name-app.txt"; then
     echo "::error::$name widget hatasi"
-    grep -B2 -A30 -E "Error in Glance App Widget|WM-WorkerWrapper|Didn.t find WorkSpec" "smoke/$name.txt" | head -80
+    grep -B2 -A30 -E "Error in Glance App Widget|WM-WorkerWrapper|Didn.t find WorkSpec" "smoke/$name-app.txt" | head -80
     status=1
   fi
   adb logcat -d -b crash > "smoke/$name-crash.txt"
