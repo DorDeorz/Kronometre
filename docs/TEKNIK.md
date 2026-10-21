@@ -7,11 +7,12 @@ saniyelik döngüsü, wake lock'u veya periyodik işi yoktur.
 - Paket: `com.dordeorz.kronometre` · `minSdk 23` · `targetSdk 36` · `compileSdk 37`
 - Teknik sözleşme: [`PROMPT.md`](PROMPT.md) · niyet: [`CLAUDE.md`](CLAUDE.md)
 
-> **Durum:** 1.2.0 için `assembleDebug assembleRelease lint testDebugUnitTest` yerelde
+> **Durum:** 1.2.1 için `assembleDebug assembleRelease lint testDebugUnitTest` yerelde
 > yeşil (JDK 21, Android SDK platform 37; lint: 0 hata, 13 uyarı; release APK 2 682 085
-> bayt). APK'lar her CI koşusunun `kronometre-apk-ve-raporlar` artifact'ında. Cihaz
-> testleri ve ölçümler kullanıcının işidir; sonuçlar aşağıdaki tablolara girilene kadar
-> "ölçülmedi" kalır.
+> bayt). 1.2.0'daki R8 kaynaklı açılış çökmesi, WorkManager/Room/SQLite keep kuralları
+> geri getirilerek giderildi; Smoke API 26 ve 34'te doğrulanır. APK'lar her CI koşusunun
+> `kronometre-apk-ve-raporlar` artifact'ında. Cihaz testleri ve ölçümler kullanıcının
+> işidir; sonuçlar aşağıdaki tablolara girilene kadar "ölçülmedi" kalır.
 
 ---
 
@@ -48,6 +49,7 @@ doğrudan kurulabilir. Play'e yüklenecekse kendi `signingConfig`'ini tanımla.
 | datastore-preferences | 1.2.1 | |
 | androidx.profileinstaller | — | 1.2.0'da kaldırıldı; baseline profile yok |
 | desugar_jdk_libs | — | 1.2.0'da kaldırıldı; kullanılmıyordu |
+| WorkManager / Room / SQLite | Glance üzerinden transitif | 1.2.1: R8 keep kuralları geri getirildi |
 
 **`compileSdk` neden 36 değil 37:** Güncel stable AndroidX sürümleri 36'yla derlenmiyor —
 core 1.18+ `compileSdk 36.1`, lifecycle 2.11 ve Compose 1.12 hattı "Compose compileSdk 37,
@@ -286,7 +288,7 @@ adb shell am start -W -n com.dordeorz.kronometre/.MainActivity   # TotalTime < 3
 | Baz: Screen off discharge (mAh/sa) | — | ölçülmedi | ölçülmedi |
 | PSS çalışırken | < 60 MB | ölçülmedi | ölçülmedi |
 | Cold start (`TotalTime`) | < 300 ms | ölçülmedi | ölçülmedi |
-| APK (R8 release) | < 3.5 MB | 2.68 MB (2 682 085 bayt, 1.2.0) | aynı APK |
+| APK (R8 release) | < 3.5 MB | 2.68 MB (2 682 085 bayt, 1.2.1) | aynı APK |
 
 **Üç koşu yan yana (pil düşüşü, mAh / %):**
 
@@ -299,7 +301,7 @@ Ham çıktılar geldikçe `measurements/` altına eklenecek.
 
 ## Sürüm ve yayın
 
-- `versionName` / `versionCode` Gradle özelliklerinden gelir (`-PappVersionName`, `-PappVersionCode`); yerelde varsayılan `1.2.0` / `102`.
+- `versionName` / `versionCode` Gradle özelliklerinden gelir (`-PappVersionName`, `-PappVersionCode`); yerelde varsayılan `1.2.1` / `103`.
 - `KRONOMETRE_KEYSTORE` (+ `_KEYSTORE_PASSWORD`, `_KEY_ALIAS`, `_KEY_PASSWORD`) ortam değişkenleri varsa release yükleme anahtarıyla, yoksa debug anahtarıyla imzalanır.
 - `v*` etiketi itilince `.github/workflows/release.yml` imzalı `.aab` ve `.apk` üretip GitHub Release'e ekler. `versionCode = 100 + run_number` her çalıştırmada artar. Gereken secret'lar: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
 

@@ -2,22 +2,37 @@ name: Android
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
       - name: Build, lint, test
         run: ./gradlew --stacktrace assembleDebug assembleRelease lint testDebugUnitTest
+      - name: Test özeti
+        if: always()
+        run: |
+          find app/build/test-results/testDebugUnitTest -maxdepth 1 -name 'TEST-*.xml' -print0 2>/dev/null |
+            xargs -0 -r grep -h '<testsuite ' |
+            sed -E 's/.*name="([^"]+)".*tests="([0-9]+)".*failures="([0-9]+)".*errors="([0-9]+)".*/\1: \2 test, \3 hata, \4 istisna/' |
+            tee -a "$GITHUB_STEP_SUMMARY"
       - name: Lint raporu
         if: always()
         run: cat app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt || true

@@ -30,7 +30,7 @@ uygulamanın kendi pil ve işlemci kullanımı neredeyse sıfırda kalır.
 | | |
 |---|---|
 | ⏱ **Kronometre** | Başlat, duraklat, tur al, sıfırla. Süre bir halkanın içinde gösterilir; salise açıkken halka her dakikayı doldurur. Tur sayısı ve en hızlı tur kartlarda, en hızlı tur vurgulu, en yavaş tur kırmızı gösterilir. Turlar tek dokunuşla panoya kopyalanır. Uygulama açıkken salise gösterilir. |
-| ⏲ **Zamanlayıcı** | Tuş takımıyla süre gir veya 1 / 5 / 10 / 15 / 30 dk hazır düğmelerini kullan. Bildirimden duraklat, +1 dk ekle ya da iptal et. Süre dolunca alarm sesi ve titreşimle haber verir; 2 dakika sonra kendiliğinden susar. Version 1.2.0: alarm, telefon uykuya dalsa ve saat değişse de zamanında çalar; bildirim sesi kapalıysa yedek alarm devreye girer. |
+| ⏲ **Zamanlayıcı** | Tuş takımıyla süre gir veya 1 / 5 / 10 / 15 / 30 dk hazır düğmelerini kullan. Bildirimden duraklat, +1 dk ekle ya da iptal et. Süre dolunca alarm sesi ve titreşimle haber verir; 2 dakika sonra kendiliğinden susar. 1.2.1: alarm, telefon uykuya dalsa ve saat değişse de zamanında çalar; bildirim sesi kapalıysa yedek alarm devreye girer. |
 | 🔔 **Bildirim** | Büyük, canlı süre. Kilit ekranında da görünür ve kapatılamaz. Duraklatınca Sürdür ve Sıfırla düğmeleri çıkar. Zamanlayıcı bildirimi kalan süreyi ilerleme çubuğuyla gösterir. |
 | 🧩 **Widget** | Yeniden boyutlandırılabilir. Süre ve düğmeler widget'ın boyutuna göre büyür. Başlat, Duraklat, Tur ve Sıfırla doğrudan widget'tan çalışır. |
 | 🌙 **Ekran karartma** | Kronometre çalışırken 10 saniye dokunulmazsa ekran kararır, dokununca geri gelir. Ayarlardan kapatılabilir. |
