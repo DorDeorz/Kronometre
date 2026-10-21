@@ -8,7 +8,7 @@ saniyelik döngüsü, wake lock'u veya periyodik işi yoktur.
 - Teknik sözleşme: [`PROMPT.md`](PROMPT.md) · niyet: [`CLAUDE.md`](CLAUDE.md)
 
 > **Durum:** 1.2.1 için `assembleDebug assembleRelease lint testDebugUnitTest` yerelde
-> yeşil (JDK 21, Android SDK platform 37; lint: 0 hata, 13 uyarı; release APK 2 682 085
+> yeşil (JDK 21, Android SDK platform 37; lint: 0 hata, 13 uyarı; release APK 2 780 436
 > bayt). 1.2.0'daki R8 kaynaklı açılış çökmesi, WorkManager/Room/SQLite keep kuralları
 > geri getirilerek giderildi; Smoke API 26 ve 34'te doğrulanır. APK'lar her CI koşusunun
 > `kronometre-apk-ve-raporlar` artifact'ında. Cihaz testleri ve ölçümler kullanıcının
@@ -288,7 +288,7 @@ adb shell am start -W -n com.dordeorz.kronometre/.MainActivity   # TotalTime < 3
 | Baz: Screen off discharge (mAh/sa) | — | ölçülmedi | ölçülmedi |
 | PSS çalışırken | < 60 MB | ölçülmedi | ölçülmedi |
 | Cold start (`TotalTime`) | < 300 ms | ölçülmedi | ölçülmedi |
-| APK (R8 release) | < 3.5 MB | 2.68 MB (2 682 085 bayt, 1.2.1) | aynı APK |
+| APK (R8 release) | < 3.5 MB | 2.78 MB (2 780 436 bayt, 1.2.1) | aynı APK |
 
 **Üç koşu yan yana (pil düşüşü, mAh / %):**
 

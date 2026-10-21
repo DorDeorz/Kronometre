@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -u
+shopt -s nullglob
 PKG=com.dordeorz.kronometre
 mkdir -p smoke
 status=0
