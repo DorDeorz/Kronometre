@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -86,12 +88,22 @@ class MainActivity : ComponentActivity() {
             }
             LaunchedEffect(appSettings.dimScreen) { dimController.enabled = appSettings.dimScreen }
             KronometreTheme(darkTheme = dark, dynamicColor = appSettings.dynamicColor) {
+                SideEffect {
+                    val controller = WindowCompat.getInsetsController(window, window.decorView)
+                    controller.isAppearanceLightStatusBars = !dark
+                    controller.isAppearanceLightNavigationBars = !dark
+                }
                 if (showSettings) {
                     BackHandler { showSettings = false }
                     SettingsScreen(
                         settings = appSettings,
                         version = BuildConfig.VERSION_NAME,
-                        onThemeModeChange = { mode -> lifecycleScope.launch { settings.setThemeMode(mode) } },
+                        onThemeModeChange = { mode ->
+                            lifecycleScope.launch {
+                                settings.setThemeMode(mode)
+                                StopwatchWidget().updateAll(applicationContext)
+                            }
+                        },
                         onShowCentisChange = { value -> lifecycleScope.launch { settings.setShowCentis(value) } },
                         onDimScreenChange = { value -> lifecycleScope.launch { settings.setDimScreen(value) } },
                         onDynamicColorChange = { value ->
@@ -100,6 +112,7 @@ class MainActivity : ComponentActivity() {
                                 StopwatchWidget().updateAll(applicationContext)
                             }
                         },
+                        onShowOemHelp = { lifecycleScope.launch { settings.setOemHelpDismissed(false) } },
                         updateStatus = updateStatus,
                         onCheckUpdates = {
                             updateStatus = UpdateStatus.Checking
@@ -113,10 +126,12 @@ class MainActivity : ComponentActivity() {
                         stopwatchViewModel = viewModel,
                         timerViewModel = timerViewModel,
                         showCentis = appSettings.showCentis,
+                        oemHelpDismissed = appSettings.oemHelpDismissed,
                         selectedTab = selectedTab,
                         onSelectTab = { selectedTab = it },
                         onRunningChanged = dimController::setRunning,
                         onOpenSettings = { showSettings = true },
+                        onDismissOemHelp = { lifecycleScope.launch { settings.setOemHelpDismissed(true) } },
                     )
                 }
             }

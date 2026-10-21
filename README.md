@@ -22,7 +22,7 @@ Bildirimdeki ve widget'taki canlı süreyi Android'in kendisi çizer. Böylece k
 uygulamanın kendi pil ve işlemci kullanımı neredeyse sıfırda kalır.
 
 - **Doğru:** Saat değişse, telefon uyusa ya da uygulamayı kapatsan bile süre kaymaz.
-- **Hafif:** Kurulum dosyası 3 MB'ın altında. Reklam, hesap ve internet izni isteyen bir özellik yok (internet sadece "Güncellemeleri denetle" için kullanılır).
+- **Hafif:** Kurulum dosyası 3 MB'ın altında. Reklam ve hesap yok; internet yalnızca "Güncellemeleri denetle" için kullanılır.
 - **Her yerde:** Bildirimden, kilit ekranından ve ana ekran widget'ından kontrol edilir.
 
 ## Özellikler
@@ -30,13 +30,13 @@ uygulamanın kendi pil ve işlemci kullanımı neredeyse sıfırda kalır.
 | | |
 |---|---|
 | ⏱ **Kronometre** | Başlat, duraklat, tur al, sıfırla. Süre bir halkanın içinde gösterilir; salise açıkken halka her dakikayı doldurur. Tur sayısı ve en hızlı tur kartlarda, en hızlı tur vurgulu, en yavaş tur kırmızı gösterilir. Turlar tek dokunuşla panoya kopyalanır. Uygulama açıkken salise gösterilir. |
-| ⏲ **Zamanlayıcı** | Tuş takımıyla süre gir, başlat. Bildirimden duraklat, +1 dk ekle ya da iptal et. Süre dolunca alarm sesi ve titreşimle haber verir. |
-| 🔔 **Bildirim** | Büyük, canlı süre. Kilit ekranında da görünür ve kapatılamaz. Duraklatınca Sürdür ve Sıfırla düğmeleri çıkar. |
+| ⏲ **Zamanlayıcı** | Tuş takımıyla süre gir veya 1 / 5 / 10 / 15 / 30 dk hazır düğmelerini kullan. Bildirimden duraklat, +1 dk ekle ya da iptal et. Süre dolunca alarm sesi ve titreşimle haber verir; 2 dakika sonra kendiliğinden susar. Version 1.2.0: alarm, telefon uykuya dalsa ve saat değişse de zamanında çalar; bildirim sesi kapalıysa yedek alarm devreye girer. |
+| 🔔 **Bildirim** | Büyük, canlı süre. Kilit ekranında da görünür ve kapatılamaz. Duraklatınca Sürdür ve Sıfırla düğmeleri çıkar. Zamanlayıcı bildirimi kalan süreyi ilerleme çubuğuyla gösterir. |
 | 🧩 **Widget** | Yeniden boyutlandırılabilir. Süre ve düğmeler widget'ın boyutuna göre büyür. Başlat, Duraklat, Tur ve Sıfırla doğrudan widget'tan çalışır. |
 | 🌙 **Ekran karartma** | Kronometre çalışırken 10 saniye dokunulmazsa ekran kararır, dokununca geri gelir. Ayarlardan kapatılabilir. |
-| 🎨 **Tasarım** | Adımsayar ile aynı görünüm: kalın rakamlar, yuvarlak kartlar, alt gezinme çubuğu. Android 12 ve sonrasında renkler duvar kağıdından alınır (widget dahil); kapatılınca yeşil tema kullanılır. |
-| ⚙️ **Ayarlar** | Açık / koyu / sistem teması, telefonun renklerini kullan, salise, ekran karartma, güncelleme denetimi ve GitHub sayfası. |
-| 🔋 **Pil yardımı** | Xiaomi, Samsung, Huawei, Oppo, Vivo gibi uygulamaları arka planda kapatan markalarda hangi ayarın açılması gerektiğini gösterir. |
+| 🎨 **Tasarım** | Adımsayar ile aynı görünüm: kalın rakamlar, yuvarlak kartlar, alt gezinme çubuğu. Açık ve koyu temaların tamamı elle tanımlı. Android 12 ve sonrasında renkler duvar kağıdından alınır (widget dahil); kapatılınca yeşil tema kullanılır. |
+| ⚙️ **Ayarlar** | Açık / koyu / sistem teması, telefonun renklerini kullan, salise, ekran karartma, güncelleme denetimi, pil yardımını yeniden gösterme ve GitHub sayfası. |
+| 🔋 **Pil yardımı** | Xiaomi, Samsung, Huawei, Oppo, Vivo gibi uygulamaları arka planda kapatan markalarda hangi ayarın açılması gerektiğini gösterir. Kart kalıcı olarak kapatılabilir, Ayarlar'dan geri açılabilir. |
 
 ## Ekran görüntüleri
 
@@ -50,7 +50,7 @@ uygulamanın kendi pil ve işlemci kullanımı neredeyse sıfırda kalır.
 
 <p align="center"><b>Kronometre</b> · <b>Zamanlayıcı</b> · <b>Ayarlar</b></p>
 
-<p align="center"><i>Ekran görüntüleri 1.0.x sürümünden; 1.1.0 ile tasarım Adımsayar'a uyarlandı.</i></p>
+<p align="center"><i>Ekran görüntüleri 1.0.x sürümünden; 1.1.0 ile tasarım Adımsayar'a uyarlandı, 1.2.0 ile temalar ve pil yardımı yenilendi.</i></p>
 
 ### Widget
 
@@ -83,6 +83,7 @@ Ayarlar → **Güncellemeleri denetle** yeni sürüm olup olmadığını söyler
 
 > Xiaomi / Redmi / POCO, Samsung ve benzeri telefonlarda uygulama ilk açılışta pil ayarları için kısa bir yardım kartı gösterir.
 > Bu adımlar yapılmazsa sistem ekran kapandıktan birkaç dakika sonra kronometre bildirimini kapatabilir.
+> Kartı kapattıysan **Ayarlar → Pil yardımını göster** ile geri getirebilirsin.
 
 ## Gizlilik
 

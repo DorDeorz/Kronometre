@@ -1,6 +1,5 @@
 package com.dordeorz.kronometre.timer
 
-import android.Manifest
 import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,7 +7,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.RingtoneManager
@@ -19,10 +17,10 @@ import android.view.View
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import com.dordeorz.kronometre.MainActivity
 import com.dordeorz.kronometre.R
+import com.dordeorz.kronometre.service.NotificationHealth
 
 object TimerController {
     const val ACTION_PAUSE = "com.dordeorz.kronometre.timer.PAUSE"
@@ -30,6 +28,7 @@ object TimerController {
     const val ACTION_CANCEL = "com.dordeorz.kronometre.timer.CANCEL"
     const val ACTION_ADD_MINUTE = "com.dordeorz.kronometre.timer.ADD_MINUTE"
     const val ACTION_ALARM = "com.dordeorz.kronometre.timer.ALARM"
+    const val ACTION_ALARM_TIMEOUT = "com.dordeorz.kronometre.timer.ALARM_TIMEOUT"
     const val ACTION_STOP_ALARM = "com.dordeorz.kronometre.timer.STOP_ALARM"
     const val EXTRA_OPEN_TIMER = "com.dordeorz.kronometre.extra.OPEN_TIMER"
 
@@ -38,6 +37,7 @@ object TimerController {
     private const val NOTIFICATION_ID = 2
     private const val REQUEST_ALARM = 100
     private const val REQUEST_OPEN = 101
+    private const val REQUEST_ALARM_TIMEOUT = 102
 
     suspend fun start(context: Context, durationMs: Long) = apply(context) { state, now -> state.start(durationMs, now) }
 
@@ -46,7 +46,12 @@ object TimerController {
             ACTION_PAUSE -> state.pause(now)
             ACTION_RESUME -> state.resume(now)
             ACTION_ADD_MINUTE -> state.addMinute(now)
-            ACTION_ALARM -> if (state.status == TimerStatus.Running && state.remaining(now) <= ALARM_TOLERANCE_MS) state.ring() else state
+            ACTION_ALARM -> when {
+                state.status != TimerStatus.Running -> state
+                state.remaining(now) <= ALARM_TOLERANCE_MS -> state.ring()
+                else -> state
+            }
+            ACTION_ALARM_TIMEOUT -> if (state.status == TimerStatus.Ringing) state.cancel() else state
             ACTION_CANCEL, ACTION_STOP_ALARM -> state.cancel()
             else -> state
         }
@@ -65,20 +70,38 @@ object TimerController {
 
     private fun render(context: Context, state: TimerState) {
         ensureChannels(context)
-        if (state.status == TimerStatus.Running) scheduleAlarm(context, state) else cancelAlarm(context)
+        when (state.status) {
+            TimerStatus.Running -> {
+                cancelAlarmTimeout(context)
+                scheduleAlarm(context, state)
+            }
+            TimerStatus.Ringing -> {
+                cancelAlarm(context)
+                scheduleAlarmTimeout(context)
+            }
+            TimerStatus.Idle, TimerStatus.Paused -> {
+                cancelAlarm(context)
+                cancelAlarmTimeout(context)
+            }
+        }
+
+        val alarmChannelUsable = NotificationHealth.canPost(context, ALARM_CHANNEL_ID)
+        val ringAudible = alarmChannelUsable && NotificationHealth.isAlarmAudible(context, ALARM_CHANNEL_ID)
+        if (state.status == TimerStatus.Ringing && !ringAudible) {
+            AlarmSoundPlayer.start(context)
+        } else {
+            AlarmSoundPlayer.stop()
+        }
+
         val manager = NotificationManagerCompat.from(context)
         if (state.status == TimerStatus.Idle) {
             manager.cancel(NOTIFICATION_ID)
             return
         }
-        if (!manager.areNotificationsEnabled()) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
+        val channelId = if (state.status == TimerStatus.Ringing && alarmChannelUsable) ALARM_CHANNEL_ID else CHANNEL_ID
+        if (!NotificationHealth.canPost(context, channelId)) return
         try {
-            manager.notify(NOTIFICATION_ID, build(context, state))
+            manager.notify(NOTIFICATION_ID, build(context, state, channelId == ALARM_CHANNEL_ID))
         } catch (e: SecurityException) {
             return
         }
@@ -92,25 +115,37 @@ object TimerController {
     private fun scheduleAlarm(context: Context, state: TimerState) {
         val alarmManager = context.getSystemService<AlarmManager>() ?: return
         val pending = alarmIntent(context)
-        val remaining = state.remaining()
+        val triggerAt = SystemClock.elapsedRealtime() + state.remaining().coerceAtLeast(0L)
         try {
             if (canScheduleExact(context)) {
-                val info = AlarmManager.AlarmClockInfo(System.currentTimeMillis() + remaining, openIntent(context))
-                alarmManager.setAlarmClock(info, pending)
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pending)
             } else {
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                    SystemClock.elapsedRealtime() + remaining,
-                    pending,
-                )
+                alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pending)
             }
         } catch (e: SecurityException) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + remaining, pending)
+            alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pending)
         }
     }
 
     private fun cancelAlarm(context: Context) {
         context.getSystemService<AlarmManager>()?.cancel(alarmIntent(context))
+    }
+
+    private fun scheduleAlarmTimeout(context: Context) {
+        val alarmManager = context.getSystemService<AlarmManager>() ?: return
+        try {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime() + ALARM_TIMEOUT_MS,
+                timeoutIntent(context),
+            )
+        } catch (e: SecurityException) {
+            return
+        }
+    }
+
+    private fun cancelAlarmTimeout(context: Context) {
+        context.getSystemService<AlarmManager>()?.cancel(timeoutIntent(context))
     }
 
     private fun ensureChannels(context: Context) {
@@ -140,25 +175,30 @@ object TimerController {
         )
     }
 
-    private fun build(context: Context, state: TimerState): Notification {
+    private fun build(context: Context, state: TimerState, alarmChannel: Boolean): Notification {
         if (state.status == TimerStatus.Ringing) {
-            val notification = NotificationCompat.Builder(context, ALARM_CHANNEL_ID)
+            val builder = NotificationCompat.Builder(context, if (alarmChannel) ALARM_CHANNEL_ID else CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_timer)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setContentTitle(context.getString(R.string.timer_done))
                 .setContentText(DateUtils.formatElapsedTime(state.durationMs / 1000))
-                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM), AudioManager.STREAM_ALARM)
-                .setVibrate(VIBRATION)
                 .setOngoing(true)
                 .setAutoCancel(false)
                 .setContentIntent(openIntent(context))
                 .setDeleteIntent(actionIntent(context, ACTION_STOP_ALARM))
                 .addAction(R.drawable.ic_reset, context.getString(R.string.timer_stop), actionIntent(context, ACTION_STOP_ALARM))
                 .addAction(R.drawable.ic_timer, context.getString(R.string.timer_add_minute), actionIntent(context, ACTION_ADD_MINUTE))
-                .build()
-            notification.flags = notification.flags or Notification.FLAG_INSISTENT
+            if (alarmChannel) {
+                builder
+                    .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM), AudioManager.STREAM_ALARM)
+                    .setVibrate(VIBRATION)
+            } else {
+                builder.setSilent(true)
+            }
+            val notification = builder.build()
+            if (alarmChannel) notification.flags = notification.flags or Notification.FLAG_INSISTENT
             return notification
         }
         val builder = baseBuilder(context, state)
@@ -182,6 +222,10 @@ object TimerController {
             .setContentText(context.getString(if (running) R.string.timer_running else R.string.timer_paused))
         val views = timeViews(context, state, remaining)
         builder.setCustomContentView(views).setCustomBigContentView(views)
+        if (state.durationMs > 0L) {
+            val elapsed = (state.durationMs - remaining).coerceIn(0L, state.durationMs)
+            builder.setProgress(PROGRESS_MAX, (elapsed * PROGRESS_MAX / state.durationMs).toInt(), false)
+        }
         if (running) {
             builder.addAction(R.drawable.ic_pause, context.getString(R.string.action_pause), actionIntent(context, ACTION_PAUSE))
         } else {
@@ -217,6 +261,14 @@ object TimerController {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
+    private fun timeoutIntent(context: Context): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            REQUEST_ALARM_TIMEOUT,
+            Intent(context, TimerReceiver::class.java).setAction(ACTION_ALARM_TIMEOUT),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+
     private fun actionIntent(context: Context, action: String): PendingIntent =
         PendingIntent.getBroadcast(
             context,
@@ -235,6 +287,8 @@ object TimerController {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-    private const val ALARM_TOLERANCE_MS = 2_000L
+    private const val ALARM_TOLERANCE_MS = 5_000L
+    private const val ALARM_TIMEOUT_MS = 2 * 60_000L
+    private const val PROGRESS_MAX = 1_000
     private val VIBRATION = longArrayOf(0L, 600L, 400L, 600L, 400L, 600L)
 }

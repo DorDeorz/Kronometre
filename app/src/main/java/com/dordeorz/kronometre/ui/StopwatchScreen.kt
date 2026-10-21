@@ -34,27 +34,34 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dordeorz.kronometre.R
 import com.dordeorz.kronometre.data.OemProfile
 import com.dordeorz.kronometre.data.StopwatchState
+import com.dordeorz.kronometre.service.NotificationHealth
+import com.dordeorz.kronometre.service.StopwatchNotifier
 import com.dordeorz.kronometre.ui.oem.BatteryOptimizationCard
 import com.dordeorz.kronometre.ui.oem.BatteryOptimizationHelper
 import com.dordeorz.kronometre.ui.theme.KronometreTheme
 
 @Composable
-fun StopwatchScreen(viewModel: StopwatchViewModel, showCentis: Boolean, onRunningChanged: (Boolean) -> Unit) {
+fun StopwatchScreen(
+    viewModel: StopwatchViewModel,
+    showCentis: Boolean,
+    oemHelpDismissed: Boolean,
+    onRunningChanged: (Boolean) -> Unit,
+    onDismissOemHelp: () -> Unit,
+) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val startFailed by viewModel.startFailed.collectAsStateWithLifecycle()
     var notificationsEnabled by remember { mutableStateOf(true) }
     var batteryExempt by remember { mutableStateOf(true) }
-    var oemDismissed by rememberSaveable { mutableStateOf(false) }
     var permissionAsked by rememberSaveable { mutableStateOf(false) }
     val profile = remember { OemProfile.current() }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        notificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+        notificationsEnabled = NotificationHealth.canPost(context, StopwatchNotifier.CHANNEL_ID)
     }
 
     LifecycleResumeEffect(Unit) {
-        notificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+        notificationsEnabled = NotificationHealth.canPost(context, StopwatchNotifier.CHANNEL_ID)
         batteryExempt = BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)
         onPauseOrDispose { }
     }
@@ -81,8 +88,8 @@ fun StopwatchScreen(viewModel: StopwatchViewModel, showCentis: Boolean, onRunnin
         onOpenNotificationSettings = { BatteryOptimizationHelper.openNotificationSettings(context) },
         showCentis = showCentis,
         oemCard = {
-            if (!batteryExempt && !oemDismissed) {
-                BatteryOptimizationCard(profile = profile, onDismiss = { oemDismissed = true })
+            if (!batteryExempt && !oemHelpDismissed) {
+                BatteryOptimizationCard(profile = profile, onDismiss = onDismissOemHelp)
             }
         },
     )

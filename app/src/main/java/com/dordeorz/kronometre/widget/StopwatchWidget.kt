@@ -8,6 +8,8 @@ import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,6 +53,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.material3.ColorProviders
 import android.os.Build
 import com.dordeorz.kronometre.data.SettingsRepository
+import com.dordeorz.kronometre.data.ThemeMode
 import com.dordeorz.kronometre.ui.theme.DarkColors
 import com.dordeorz.kronometre.ui.theme.LightColors
 import kotlinx.coroutines.flow.first
@@ -73,7 +76,7 @@ class StopwatchWidget : GlanceAppWidget() {
         provideContent {
             val state by repository.state.collectAsState()
             val settings by settingsFlow.collectAsState(initialSettings)
-            WidgetTheme(settings.dynamicColor) {
+            WidgetTheme(settings.themeMode, settings.dynamicColor) {
                 WidgetContent(state)
             }
         }
@@ -92,12 +95,27 @@ private const val SECONDARY_HEIGHT_RATIO = 0.85f
 private val AppColors = ColorProviders(light = LightColors, dark = DarkColors)
 
 @Composable
-private fun WidgetTheme(dynamicColor: Boolean, content: @Composable () -> Unit) {
-    if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+private fun WidgetTheme(themeMode: ThemeMode, dynamicColor: Boolean, content: @Composable () -> Unit) {
+    val context = LocalContext.current
+    val dynamic = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    if (dynamic && themeMode == ThemeMode.System) {
         GlanceTheme(content = content)
-    } else {
-        GlanceTheme(colors = AppColors, content = content)
+        return
     }
+    val colors = when {
+        dynamic && themeMode == ThemeMode.Light -> ColorProviders(
+            light = dynamicLightColorScheme(context),
+            dark = dynamicLightColorScheme(context),
+        )
+        dynamic && themeMode == ThemeMode.Dark -> ColorProviders(
+            light = dynamicDarkColorScheme(context),
+            dark = dynamicDarkColorScheme(context),
+        )
+        themeMode == ThemeMode.Light -> ColorProviders(light = LightColors, dark = LightColors)
+        themeMode == ThemeMode.Dark -> ColorProviders(light = DarkColors, dark = DarkColors)
+        else -> AppColors
+    }
+    GlanceTheme(colors = colors, content = content)
 }
 
 private enum class ButtonStyle { Start, Stop, Secondary }

@@ -20,8 +20,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -44,6 +46,12 @@ object BatteryOptimizationHelper {
         OemTarget.AppDetails -> openAppDetails(context) || openBatteryList(context)
         OemTarget.NotificationSettings -> openNotificationSettings(context)
         OemTarget.Manual -> false
+    }
+
+    fun openExactAlarmSettings(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return openAppDetails(context)
+        return tryStart(context, Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, packageUri(context))) ||
+            openAppDetails(context)
     }
 
     fun openNotificationSettings(context: Context): Boolean {
@@ -80,9 +88,9 @@ object BatteryOptimizationHelper {
 @Composable
 fun BatteryOptimizationCard(profile: OemProfile, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val done = remember { mutableStateListOf<Int>() }
-    val failed = remember { mutableStateListOf<Int>() }
-    val containerColor = if (profile.aggressive) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceVariant
+    var done by rememberSaveable { mutableStateOf(IntArray(0)) }
+    var failed by rememberSaveable { mutableStateOf(IntArray(0)) }
+    val containerColor = if (profile.aggressive) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant
     Card(modifier = modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = containerColor)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -95,11 +103,17 @@ fun BatteryOptimizationCard(profile: OemProfile, onDismiss: () -> Unit, modifier
             profile.steps.forEachIndexed { index, step ->
                 StepRow(
                     step = step,
-                    checked = index in done,
-                    failed = index in failed,
-                    onCheckedChange = { if (it) done.add(index) else done.remove(index) },
+                    checked = done.contains(index),
+                    failed = failed.contains(index),
+                    onCheckedChange = { checked ->
+                        done = if (checked) done + index else done.filterNot { it == index }.toIntArray()
+                    },
                     onOpen = {
-                        if (!BatteryOptimizationHelper.open(context, profile, step.target)) failed.add(index)
+                        if (BatteryOptimizationHelper.open(context, profile, step.target)) {
+                            failed = failed.filterNot { it == index }.toIntArray()
+                        } else {
+                            failed = if (failed.contains(index)) failed else failed + index
+                        }
                     },
                 )
             }
@@ -130,7 +144,7 @@ private fun StepRow(
                 )
             }
         }
-        if (step.target != OemTarget.Manual && !failed) {
+        if (step.target != OemTarget.Manual) {
             TextButton(onClick = onOpen) { Text(stringResource(R.string.oem_open)) }
         }
     }

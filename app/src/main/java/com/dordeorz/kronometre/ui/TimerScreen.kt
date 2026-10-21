@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -51,14 +52,15 @@ fun TimerScreen(
     onToggle: () -> Unit,
     onAddMinute: () -> Unit,
     onCancel: () -> Unit,
+    onOpenExactAlarmSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         if (!exactAlarmsAllowed) {
-            Text(
-                text = stringResource(R.string.timer_exact_denied),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
+            MessageBanner(
+                message = stringResource(R.string.timer_exact_denied),
+                actionLabel = stringResource(R.string.timer_exact_allow),
+                onAction = onOpenExactAlarmSettings,
                 modifier = Modifier.padding(vertical = 8.dp),
             )
         }
@@ -80,6 +82,7 @@ private fun TimerInput(initialMs: Long, onStart: (Long) -> Unit, modifier: Modif
             Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     DigitsDisplay(digits)
+                    PresetRow(onSelect = { minutes -> digits = msToDigits(minutes * 60_000L) }, modifier = Modifier.padding(top = 12.dp))
                     StartButton(enabled = duration > 0L, onClick = { onStart(duration) }, modifier = Modifier.padding(top = 16.dp))
                 }
                 Keypad(onDigit = { digits = push(digits, it) }, onDelete = { digits = pop(digits) }, modifier = Modifier.weight(1f))
@@ -91,6 +94,7 @@ private fun TimerInput(initialMs: Long, onStart: (Long) -> Unit, modifier: Modif
                 verticalArrangement = Arrangement.SpaceEvenly,
             ) {
                 DigitsDisplay(digits)
+                PresetRow(onSelect = { minutes -> digits = msToDigits(minutes * 60_000L) })
                 Keypad(
                     onDigit = { digits = push(digits, it) },
                     onDelete = { digits = pop(digits) },
@@ -151,6 +155,28 @@ private fun KeyButton(label: String, modifier: Modifier, onClick: () -> Unit) {
         modifier = modifier.aspectRatio(1.6f),
     ) {
         Text(label, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun PresetRow(onSelect: (Long) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        PRESET_MINUTES.forEach { minutes ->
+            FilledTonalButton(
+                onClick = { onSelect(minutes) },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ),
+                modifier = Modifier.weight(1f).height(40.dp),
+            ) {
+                Text(stringResource(R.string.timer_preset, minutes), maxLines = 1)
+            }
+        }
     }
 }
 
@@ -233,6 +259,8 @@ private fun TimerRunning(
     }
 }
 
+private val PRESET_MINUTES = listOf(1L, 5L, 10L, 15L, 30L)
+
 private fun push(digits: String, digit: Char): String =
     if (digits.length >= 6 || (digits.isEmpty() && digit == '0')) digits else digits + digit
 
@@ -257,7 +285,7 @@ private fun msToDigits(ms: Long): String {
 @Composable
 private fun TimerInputPreview() {
     KronometreTheme {
-        TimerScreen(TimerState(), exactAlarmsAllowed = true, onStart = {}, onToggle = {}, onAddMinute = {}, onCancel = {})
+        TimerScreen(TimerState(), exactAlarmsAllowed = true, onStart = {}, onToggle = {}, onAddMinute = {}, onCancel = {}, onOpenExactAlarmSettings = {})
     }
 }
 
@@ -272,6 +300,7 @@ private fun TimerRunningPreview() {
             onToggle = {},
             onAddMinute = {},
             onCancel = {},
+            onOpenExactAlarmSettings = {},
         )
     }
 }

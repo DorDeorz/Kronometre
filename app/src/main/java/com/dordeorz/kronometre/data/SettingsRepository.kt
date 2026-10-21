@@ -2,9 +2,11 @@ package com.dordeorz.kronometre.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -17,9 +19,13 @@ data class AppSettings(
     val showCentis: Boolean = true,
     val dimScreen: Boolean = true,
     val dynamicColor: Boolean = true,
+    val oemHelpDismissed: Boolean = false,
 )
 
-private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "settings",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+)
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
@@ -29,6 +35,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             showCentis = prefs[SHOW_CENTIS] ?: true,
             dimScreen = prefs[DIM_SCREEN] ?: true,
             dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
+            oemHelpDismissed = prefs[OEM_HELP_DISMISSED] ?: false,
         )
     }
 
@@ -48,11 +55,16 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[DYNAMIC_COLOR] = value }
     }
 
+    suspend fun setOemHelpDismissed(value: Boolean) {
+        dataStore.edit { it[OEM_HELP_DISMISSED] = value }
+    }
+
     companion object {
         private val THEME = stringPreferencesKey("theme")
         private val SHOW_CENTIS = booleanPreferencesKey("show_centis")
         private val DIM_SCREEN = booleanPreferencesKey("dim_screen")
         private val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        private val OEM_HELP_DISMISSED = booleanPreferencesKey("oem_help_dismissed")
 
         @Volatile
         private var instance: SettingsRepository? = null

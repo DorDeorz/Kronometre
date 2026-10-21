@@ -1,29 +1,22 @@
 package com.dordeorz.kronometre.data
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class StopwatchRepositoryTest {
 
-    @get:Rule
-    val folder = TemporaryFolder()
-
     private var now = 0L
 
-    private fun TestScope.dataStore(name: String = "test") =
-        PreferenceDataStoreFactory.create(scope = backgroundScope) { folder.root.resolve("$name.preferences_pb") }
+    private fun dataStore() = FakePreferencesDataStore()
 
     @Test
     fun commandsUpdateStateAndPersist() = runTest(UnconfinedTestDispatcher()) {
@@ -46,7 +39,7 @@ class StopwatchRepositoryTest {
     }
 
     @Test
-    fun restoreAfterProcessDeathIsPaused() = runTest(UnconfinedTestDispatcher()) {
+    fun restoreWithoutBootCountIsPaused() = runTest(UnconfinedTestDispatcher()) {
         val store = dataStore()
         store.edit {
             it[longPreferencesKey("elapsed_ms")] = 7_000L
@@ -54,6 +47,34 @@ class StopwatchRepositoryTest {
         }
         now = 90_000L
         val restored = StopwatchRepository(store) { now }.load()
+        assertFalse(restored.isRunning)
+        assertEquals(7_000L, restored.elapsedMs)
+    }
+
+    @Test
+    fun restoreAfterProcessDeathKeepsRunningWhenBootCountMatches() = runTest(UnconfinedTestDispatcher()) {
+        val store = dataStore()
+        store.edit {
+            it[longPreferencesKey("elapsed_ms")] = 7_000L
+            it[longPreferencesKey("running_since")] = 500L
+            it[intPreferencesKey("boot_count")] = 3
+        }
+        now = 90_000L
+        val restored = StopwatchRepository(store, bootCount = { 3 }, clock = { now }).load()
+        assertTrue(restored.isRunning)
+        assertEquals(96_500L, restored.currentElapsedMs(now))
+    }
+
+    @Test
+    fun restoreAfterRebootPausesWithoutLosingElapsed() = runTest(UnconfinedTestDispatcher()) {
+        val store = dataStore()
+        store.edit {
+            it[longPreferencesKey("elapsed_ms")] = 7_000L
+            it[longPreferencesKey("running_since")] = 500L
+            it[intPreferencesKey("boot_count")] = 3
+        }
+        now = 2_000L
+        val restored = StopwatchRepository(store, bootCount = { 4 }, clock = { now }).load()
         assertFalse(restored.isRunning)
         assertEquals(7_000L, restored.elapsedMs)
     }

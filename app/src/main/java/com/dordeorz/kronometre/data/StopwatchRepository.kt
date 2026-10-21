@@ -1,10 +1,15 @@
 package com.dordeorz.kronometre.data
 
 import android.content.Context
+import android.os.Build
 import android.os.SystemClock
+import android.provider.Settings
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -15,10 +20,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-private val Context.stopwatchDataStore: DataStore<Preferences> by preferencesDataStore(name = "stopwatch")
+private val Context.stopwatchDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "stopwatch",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+)
 
 class StopwatchRepository(
     private val dataStore: DataStore<Preferences>,
+    private val bootCount: () -> Int = { 0 },
     private val clock: () -> Long = SystemClock::elapsedRealtime,
 ) {
     private val mutex = Mutex()
@@ -40,6 +49,17 @@ class StopwatchRepository(
 
     suspend fun reset(): StopwatchState = update { it.reset() }
 
+    suspend fun onBoot(): StopwatchState = mutex.withLock {
+        ensureLoaded()
+        val old = _state.value
+        val new = if (old.isRunning) old.copy(elapsedMs = old.elapsedMs, runningSinceElapsedRealtime = null) else old
+        if (new != old) {
+            _state.value = new
+            write(new)
+        }
+        new
+    }
+
     private suspend fun update(transform: (StopwatchState) -> StopwatchState): StopwatchState =
         mutex.withLock {
             ensureLoaded()
@@ -60,18 +80,31 @@ class StopwatchRepository(
             runningSinceElapsedRealtime = prefs[RUNNING_SINCE],
             laps = decodeLaps(prefs[LAPS]),
         )
-        val restored = stored.copy(runningSinceElapsedRealtime = null)
-        if (restored != stored) write(restored)
+        val storedBoot = prefs[BOOT_COUNT]
+        val currentBoot = bootCount()
+        val rebooted = if (storedBoot == null) {
+            stored.isRunning
+        } else {
+            storedBoot != currentBoot
+        }
+        val restored = if (stored.isRunning && rebooted) {
+            stored.copy(elapsedMs = stored.elapsedMs, runningSinceElapsedRealtime = null)
+        } else {
+            stored
+        }
+        if (restored != stored || storedBoot != currentBoot) write(restored)
         _state.value = restored
         loaded = true
     }
 
     private suspend fun write(state: StopwatchState) {
+        val currentBoot = bootCount()
         dataStore.edit { prefs ->
             prefs[ELAPSED_MS] = state.elapsedMs
             val since = state.runningSinceElapsedRealtime
             if (since == null) prefs.remove(RUNNING_SINCE) else prefs[RUNNING_SINCE] = since
             if (state.laps.isEmpty()) prefs.remove(LAPS) else prefs[LAPS] = encodeLaps(state.laps)
+            prefs[BOOT_COUNT] = currentBoot
         }
     }
 
@@ -79,14 +112,25 @@ class StopwatchRepository(
         private val ELAPSED_MS = longPreferencesKey("elapsed_ms")
         private val RUNNING_SINCE = longPreferencesKey("running_since")
         private val LAPS = stringPreferencesKey("laps")
+        private val BOOT_COUNT = intPreferencesKey("boot_count")
 
         @Volatile
         private var instance: StopwatchRepository? = null
 
         fun get(context: Context): StopwatchRepository =
             instance ?: synchronized(this) {
-                instance ?: StopwatchRepository(context.applicationContext.stopwatchDataStore)
-                    .also { instance = it }
+                val app = context.applicationContext
+                instance ?: StopwatchRepository(
+                    dataStore = app.stopwatchDataStore,
+                    bootCount = { readBootCount(app) },
+                ).also { instance = it }
+            }
+
+        private fun readBootCount(context: Context): Int =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, 0)
+            } else {
+                0
             }
 
         internal fun encodeLaps(laps: List<Long>): String = laps.joinToString(",")

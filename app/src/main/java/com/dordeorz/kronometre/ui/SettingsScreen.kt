@@ -46,6 +46,7 @@ fun SettingsScreen(
     onShowCentisChange: (Boolean) -> Unit,
     onDimScreenChange: (Boolean) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
+    onShowOemHelp: () -> Unit,
     updateStatus: UpdateStatus,
     onCheckUpdates: () -> Unit,
     onOpenUrl: (String) -> Unit,
@@ -109,6 +110,11 @@ fun SettingsScreen(
                 hint = stringResource(R.string.settings_dim_hint),
                 checked = settings.dimScreen,
                 onCheckedChange = onDimScreenChange,
+            )
+            ClickRow(
+                title = stringResource(R.string.settings_oem_help),
+                hint = stringResource(R.string.settings_oem_help_hint),
+                onClick = onShowOemHelp,
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionTitle(stringResource(R.string.settings_updates))
@@ -222,6 +228,7 @@ private fun SettingsScreenPreview() {
             onShowCentisChange = {},
             onDimScreenChange = {},
             onDynamicColorChange = {},
+            onShowOemHelp = {},
             updateStatus = UpdateStatus.Available("1.0.1", ""),
             onCheckUpdates = {},
             onOpenUrl = {},

@@ -7,18 +7,20 @@ saniyelik döngüsü, wake lock'u veya periyodik işi yoktur.
 - Paket: `com.dordeorz.kronometre` · `minSdk 23` · `targetSdk 36` · `compileSdk 37`
 - Teknik sözleşme: [`PROMPT.md`](PROMPT.md) · niyet: [`CLAUDE.md`](CLAUDE.md)
 
-> **Durum:** GitHub Actions'ta `assembleDebug assembleRelease lint testDebugUnitTest` yeşil
-> (lint: 0 hata, 11 uyarı; release APK 2 630 979 bayt). APK'lar her koşunun
-> `kronometre-apk-ve-raporlar` artifact'ında. Bulut oturumunda `dl.google.com` engelli
-> olduğu için derleme yerelde değil CI'da doğrulanıyor. Cihaz testleri ve ölçümler
-> kullanıcının işidir; sonuçlar aşağıdaki tablolara girilene kadar "ölçülmedi" kalır.
+> **Durum:** 1.2.0 için `assembleDebug assembleRelease lint testDebugUnitTest` yerelde
+> yeşil (JDK 21, Android SDK platform 37; lint: 0 hata, 13 uyarı; release APK 2 682 085
+> bayt). APK'lar her CI koşusunun `kronometre-apk-ve-raporlar` artifact'ında. Cihaz
+> testleri ve ölçümler kullanıcının işidir; sonuçlar aşağıdaki tablolara girilene kadar
+> "ölçülmedi" kalır.
 
 ---
 
 ## Kurulum ve derleme
 
-Gereken: JDK 17+ (CI JDK 21 kullanıyor), Android SDK (platform 37, build-tools 36+).
+Gereken: JDK 17+ (CI JDK 21 kullanıyor), Android SDK (platform 37, build-tools 37).
 `local.properties` commit edilmez; Android Studio veya `ANDROID_HOME` bunu sağlar.
+Windows'ta `local.properties` içine mutlak yol yazmak yerine `ANDROID_HOME` kullanmak
+lint'in `PropertyEscape` denetimini de atlar.
 
 ```
 ./gradlew assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
@@ -44,8 +46,8 @@ doğrudan kurulabilir. Play'e yüklenecekse kendi `signingConfig`'ini tanımla.
 | activity-compose | 1.13.0 | |
 | lifecycle | 2.11.0 | |
 | datastore-preferences | 1.2.1 | |
-| profileinstaller | 1.4.1 | |
-| desugar_jdk_libs | 2.1.5 | |
+| androidx.profileinstaller | — | 1.2.0'da kaldırıldı; baseline profile yok |
+| desugar_jdk_libs | — | 1.2.0'da kaldırıldı; kullanılmıyordu |
 
 **`compileSdk` neden 36 değil 37:** Güncel stable AndroidX sürümleri 36'yla derlenmiyor —
 core 1.18+ `compileSdk 36.1`, lifecycle 2.11 ve Compose 1.12 hattı "Compose compileSdk 37,
@@ -86,10 +88,15 @@ app/src/main/java/com/dordeorz/kronometre/
 - Süre hesabı: `elapsedMs + (SystemClock.elapsedRealtime() - runningSince)`.
   `currentTimeMillis` yalnızca bildirimin `setWhen` alanı için kullanılır (API bunu istiyor).
 - DataStore yalnızca durum değişiminde yazılır. Anahtarlar: `elapsed_ms`, `running_since`, `laps` (CSV).
-- Wake lock alınmaz (izin manifest'te durur, kodda kullanılmaz).
+- Wake lock alınmaz; `WAKE_LOCK` izni 1.2.0'da manifest'ten kaldırıldı.
 - Ekran durumu `ACTION_SCREEN_ON/OFF` ile, servis içinde `ContextCompat.registerReceiver(..., RECEIVER_NOT_EXPORTED)`
   ile öğrenilir; `isInteractive` yalnızca servis `onCreate`'de bir kez okunur.
-- Uygulamada `Application` sınıfı, DI, ağ izni, analitik yok.
+- Uygulamada `Application` sınıfı, DI ve analitik yok. `INTERNET` yalnızca kullanıcı
+  "Güncellemeleri denetle"ye bastığında GitHub API'sine gitmek için kullanılır.
+- Her iki depo `Settings.Global.BOOT_COUNT` değerini de saklar. Süreç ölümünde (boot
+  sayacı aynı) çalışan durum `elapsedRealtime` tabanlı olarak sürer; yeniden başlatmada
+  `BootReceiver` çalışan zamanlayıcıyı iptal eder, kronometreyi kayıtlı süreyle duraklatır.
+- DataStore dosyaları bozulursa `ReplaceFileCorruptionHandler` boş tercihlerle devam eder.
 
 ### Bildirim
 
@@ -108,6 +115,9 @@ Yükseklik 100 dp'nin altındaysa tek satır (süre + düğmeler; dar ise yalnı
 üstündeyse sütun (150 dp'den yüksekse üstte durum satırı, ortada büyük süre, altta yuvarlak düğmeler).
 Düğmeler yuvarlak köşeli ve widget genişliğini doldurur; dar sütunda iki satır (üstte büyük birincil düğme, altta Sıfırla ve Tur). Tur atılınca sürenin altında "Tur N · süre" satırı çıkar. Düğmeler: çalışırken **Sıfırla · Duraklat · Tur**, duraklatılmışken **Sıfırla · Sürdür**, sıfırdayken **Başlat**.
 Boyut değişince yalnızca bir kez yeniden çizilir; saniyelik güncelleme yok.
+`updatePeriodMillis = 0`; periyodik launcher uyanması yok, tüm tazelemeler durum
+değişiminde veya tema değişiminde yapılır. Widget teması ayarlardaki Sistem / Açık /
+Koyu seçimini izler.
 Widget 110×40 dp'ye kadar küçültülüp büyütülebilir. Butonlar `actionStartService(..., isForegroundService = true)`,
 widget'ın geri kalanı `clickable(actionStartActivity<MainActivity>())`. Widget içeriği
 repository'den okunur; servis çalışmıyorken de doğru değeri gösterir.
@@ -135,18 +145,24 @@ Karartma `isInteractive`'ı değiştirmez; bildirim o sırada saniye modunda kal
 | Widget `setBase` | `currentTimeMillis - elapsed` | `elapsedRealtime - elapsed` | `Chronometer` tabanı `elapsedRealtime` ölçeğinde |
 | Duraklatınca bildirim | tamamen kalkar | Sürdür / Sıfırla ile kalır | Kullanıcı kararı (2026-09-27). Sıfırla bildirimi kapatır. Android 14+'da FGS olmayan bildirim kullanıcı tarafından kaydırılarak kapatılabilir; duraklatılmışken servis çalıştırmamak için bu kabul edildi |
 | Bildirim kanalı önemi | `IMPORTANCE_LOW` | `IMPORTANCE_DEFAULT` (sessiz) | LOW kanallar kilit ekranında gizlenebiliyor; ses ve titreşim kanal düzeyinde kapalı |
-| OEM yardım ekranı | ayrı ekran, "gösterildi" bayrağı, 3+ açılış sayacı | ana ekranda kapatılabilir kart | "Ayar ekranı yok" ve "DataStore'da yalnızca 3 anahtar" kuralları. Kart, marka agresifse ve muafiyet yoksa görünür; "Şimdilik kapat" o oturum için gizler; muafiyet verilince (`onResume`'da okunur) bir daha görünmez. Stock Android'de yalnızca nötr tek adım gösterilir |
+| OEM yardım ekranı | ayrı ekran, "gösterildi" bayrağı, 3+ açılış sayacı | ana ekranda kapatılabilir kart | Kart, marka agresifse ve muafiyet yoksa görünür; kapatma `oem_help_dismissed` ile kalıcıdır ve Ayarlar'dan geri açılır. Muafiyet verilince (`onResume`'da okunur) bir daha görünmez. Stock Android'de yalnızca nötr tek adım gösterilir |
 | Dokunma algılama | `pointerInput` | `Activity.dispatchTouchEvent` | Hiçbir olayı tüketmeden tüm pencereyi gözlüyor, kararmış ekrandaki ilk dokunuşu yutabiliyor |
 | Bildirim güncelleme çağrısı | `notify()` | `ServiceCompat.startForeground` | Aynı IPC, tek kod yolu, `POST_NOTIFICATIONS` lint uyarısı yok |
+| Zamanlayıcı alarmı | `setAlarmClock` (RTC) | `setExactAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP)` | Saat/saat dilimi değişiminden etkilenmez; `USE_EXACT_ALARM` ile tam zamanlı |
+| Alarm sesi | yalnızca bildirim kanalı | kanal sessizse `MediaPlayer` yedeği | Bildirim izni veya kanal sesi kapalıyken de alarm duyulur |
+| Alarm süresi | Durdur'a kadar sonsuz | 2 dakika sonra otomatik susar | `FLAG_INSISTENT` sonsuz çalmayı önler; kullanıcı yine de durdurabilir |
+| Yeniden başlatma | sezgisel `endsAt - now > duration` | `BOOT_COUNT` + `BOOT_COMPLETED` alıcısı | Yanlış pozitif/negatif yok; durum öngörülebilir |
+| OEM kartı | oturumluk kapatma, kaydedilmeyen onaylar | kalıcı kapatma + Ayarlar'dan geri açma | Kullanıcı kararı hatırlanır, yanlışlıkla kaybolmaz |
 
 ---
 
 ## Bilinen sınırlamalar
 
-- **Süreç ölümü / yeniden başlatma:** Kronometre çalışırken süreç öldürülürse (veya cihaz
-  yeniden başlarsa) açılışta kayıtlı `elapsed_ms` yüklenir ve **duraklatılmış** devam eder.
-  Son başlatma/turdan sonraki çalışan süre kaybolur. Bu kasıtlı: `elapsedRealtime` yeniden
-  başlatmada sıfırlandığı için o segment güvenle hesaplanamaz. Boot'ta otomatik devam yok.
+- **Süreç ölümü / yeniden başlatma:** Süreç öldürülüp aynı boot içinde yeniden açılırsa
+  kronometre ve zamanlayıcı `elapsedRealtime` tabanlı kaldığı yerden **çalışmaya devam
+  eder** (boot sayacı aynı). Cihaz yeniden başlarsa `elapsedRealtime` sıfırlandığı için
+  kronometre kayıtlı süreyle duraklatılır, çalışan zamanlayıcı iptal edilir (duraklatılmış
+  zamanlayıcı korunur). Boot'ta otomatik devam yok.
 - **Ekran kapalıyken bildirim dakika hassasiyetindedir.** `Chronometer` saniyeyi
   gizleyemez; bu modda uygulama dakikada bir bildirimi tazeler (saatte ~60 `startForeground`
   çağrısı). Tik `Handler` ile kurulur ve wake lock almaz; CPU derin uykudayken tik de
@@ -270,7 +286,7 @@ adb shell am start -W -n com.dordeorz.kronometre/.MainActivity   # TotalTime < 3
 | Baz: Screen off discharge (mAh/sa) | — | ölçülmedi | ölçülmedi |
 | PSS çalışırken | < 60 MB | ölçülmedi | ölçülmedi |
 | Cold start (`TotalTime`) | < 300 ms | ölçülmedi | ölçülmedi |
-| APK (R8 release) | < 3.5 MB | 2.63 MB (2 630 979 bayt, CI) | aynı APK |
+| APK (R8 release) | < 3.5 MB | 2.68 MB (2 682 085 bayt, 1.2.0) | aynı APK |
 
 **Üç koşu yan yana (pil düşüşü, mAh / %):**
 
@@ -283,20 +299,22 @@ Ham çıktılar geldikçe `measurements/` altına eklenecek.
 
 ## Sürüm ve yayın
 
-- `versionName` / `versionCode` Gradle özelliklerinden gelir (`-PappVersionName`, `-PappVersionCode`); yerelde varsayılan `1.0.0` / `1`.
+- `versionName` / `versionCode` Gradle özelliklerinden gelir (`-PappVersionName`, `-PappVersionCode`); yerelde varsayılan `1.2.0` / `102`.
 - `KRONOMETRE_KEYSTORE` (+ `_KEYSTORE_PASSWORD`, `_KEY_ALIAS`, `_KEY_PASSWORD`) ortam değişkenleri varsa release yükleme anahtarıyla, yoksa debug anahtarıyla imzalanır.
 - `v*` etiketi itilince `.github/workflows/release.yml` imzalı `.aab` ve `.apk` üretip GitHub Release'e ekler. `versionCode = 100 + run_number` her çalıştırmada artar. Gereken secret'lar: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
 
 ## Zamanlayıcı (1.0.0 ile eklendi)
 
-- Durum `timer` DataStore'unda: `status`, `duration_ms`, `remaining_ms`, `ends_at` (`elapsedRealtime` tabanlı). Çalışırken döngü yok; kalan süre `ends_at - elapsedRealtime()`.
-- Bitiş: `AlarmManager.setAlarmClock` (Doze'dan muaf, tam zamanlı). CLAUDE.md "AlarmManager kullanma" diyor, ama süre dolduğunda telefon uykudayken ses çalmanın başka güvenilir yolu yok; FGS + `Handler` derin uykuda gecikir. İzinler: `USE_EXACT_ALARM` (API 33+) ve `SCHEDULE_EXACT_ALARM` (API 31–32). İzin yoksa `setAndAllowWhileIdle` ile birkaç dakika gecikebilir, ekranda uyarı çıkar.
-- Bildirim: sessiz `timer` kanalı, `Chronometer` geri sayımı (API 24+; API 23'te statik süre). Süre dolunca `timer_alarm` kanalı (`IMPORTANCE_HIGH`, alarm sesi, titreşim, `FLAG_INSISTENT`) — **Durdur** veya **+1 dk** basılana kadar çalar.
-- Telefon yeniden başlarsa çalışan zamanlayıcı iptal edilir (`elapsedRealtime` sıfırlanır).
+- Durum `timer` DataStore'unda: `status`, `duration_ms`, `remaining_ms`, `ends_at`, `boot_count` (`elapsedRealtime` tabanlı). Çalışırken döngü yok; kalan süre `ends_at - elapsedRealtime()`.
+- Bitiş: `AlarmManager.setExactAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP)`. Saat veya saat dilimi değişse de alarm kaymaz; Doze'da `USE_EXACT_ALARM` sayesinde tam zamanlıdır. İzin yoksa `setAndAllowWhileIdle` ile birkaç dakika gecikebilir, ekranda **İzin ver** düğmeli uyarı çıkar.
+- Bildirim: sessiz `timer` kanalı, ilerleme çubuğu ve `Chronometer` geri sayımı (API 24+; API 23'te statik süre). Süre dolunca `timer_alarm` kanalı (`IMPORTANCE_HIGH`, alarm sesi, titreşim, `FLAG_INSISTENT`) — **Durdur** veya **+1 dk** basılana kadar, en fazla 2 dakika çalar.
+- Bildirim izni yoksa veya alarm kanalı sessize alınmışsa `MediaPlayer` alarm sesini kendisi çalar; kanal sağlıklıysa çift ses olmaması için yedek susturulur.
+- Giriş ekranında 1 / 5 / 10 / 15 / 30 dakika hazır düğmeleri vardır.
+- Telefon yeniden başlarsa çalışan zamanlayıcı iptal edilir (`elapsedRealtime` sıfırlanır); duraklatılmış süre korunur.
 
 ## Ayarlar (1.0.0 ile eklendi)
 
-Kullanıcı kararıyla ayarlar ekranı eklendi (CLAUDE.md "Ayar ekranı yok" kuralından bilinçli sapma). Ayarlar ayrı `settings` DataStore'unda: `theme`, `show_centis`, `dim_screen`, `dynamic_color` (1.1.0). Kronometre DataStore'u yine 3 anahtar.
+Kullanıcı kararıyla ayarlar ekranı eklendi (CLAUDE.md "Ayar ekranı yok" kuralından bilinçli sapma). Ayarlar ayrı `settings` DataStore'unda: `theme`, `show_centis`, `dim_screen`, `dynamic_color` (1.1.0), `oem_help_dismissed` (1.2.0). Kronometre DataStore'u hâlâ 3 anahtar taşır (`boot_count` teknik anahtarı ayrıdır). OEM kartı kalıcı kapatılabilir; **Ayarlar → Pil yardımını göster** ile geri açılır.
 
 - **Salise:** yalnızca uygulama ön plandayken, çalışırken her karede `withFrameMillis` ile yeniden çizilir. Uygulama arka plandayken Compose kareleri durur; bildirim ve widget etkilenmez. Kapatılınca eski `Chronometer` görünümü kullanılır.
 - **Güncelleme denetimi:** `api.github.com/repos/DorDeorz/Kronometre/releases/latest` isteği, yalnızca kullanıcı dokununca.
@@ -305,9 +323,9 @@ Kullanıcı kararıyla ayarlar ekranı eklendi (CLAUDE.md "Ayar ekranı yok" kur
 
 Kullanıcı isteğiyle görünüm [Adımsayar](https://github.com/DorDeorz/adimsayar) ile aynı dile getirildi.
 
-- **Renkler:** Adımsayar'ın yeşil şeması (`ui/theme/Theme.kt`: `primary`, `primaryContainer`, `surfaceContainer`, `surfaceContainerHighest`). Android 12+'da varsayılan olarak duvar kağıdı renkleri; ayarlardaki **Telefonun renklerini kullan** (`settings` DataStore'unda `dynamic_color`) kapatılınca yeşil şema. Başlat/Sürdür `primary`, Duraklat `primaryContainer`, ikincil düğmeler `surfaceContainerHighest`. Kırmızı yalnızca en yavaş tur ve dolan zamanlayıcıda.
+- **Renkler:** Adımsayar'ın yeşil şeması; 1.2.0'da `secondary*`, `tertiary*`, `errorContainer`, `outline*`, `surfaceContainer*` ve ters renkler dahil tam Material 3 paleti tanımlandı (eksik alanların mor varsayılanlara düşmesi engellendi). Android 12+'da varsayılan olarak duvar kağıdı renkleri; ayarlardaki **Telefonun renklerini kullan** (`settings` DataStore'unda `dynamic_color`) kapatılınca yeşil şema. Başlat/Sürdür `primary`, Duraklat `primaryContainer`, ikincil düğmeler `surfaceContainerHighest`. Kırmızı yalnızca en yavaş tur ve dolan zamanlayıcıda.
 - **Yazı:** rakamlar kalın ve `tnum` (sabit genişlik). Başlıklar `headlineMedium` kalın.
 - **Ana ekran:** üstte büyük sekme başlığı + ayarlar düğmesi, altta `NavigationBar` (Kronometre / Zamanlayıcı).
 - **Kronometre:** süre bir halkanın içinde. Salise açıkken halka her dakikayı doldurur; bu, salisenin zaten çalışan kare döngüsünü kullanır, ek döngü yok. Salise kapalıyken halka çalışırken dolu, duraklatılınca o andaki dakika oranında durur (`Chronometer` görünümü kendi tik'ini atar, Compose yeniden çizilmez). Turlar varsa "Tur sayısı" ve "En hızlı tur" kartları ile yuvarlak köşeli tur kartı.
-- **Widget:** `GlanceTheme` (dinamik renk açıksa sistem, kapalıysa aynı yeşil şema), `widgetBackground` zemin, 24 dp köşe, hap biçimli düğmeler. Süre yazısının rengi `widget_text` (`values` / `values-night`) RemoteViews XML'inde; gece modu başlatıcı tarafından çözülür. Renk ayarı değişince widget bir kez yeniden çizilir.
+- **Widget:** `GlanceTheme` (tema Sistem ise sistem, Açık/Koyu ise ayarlanan şema; dinamik renk açıksa duvar kağıdı renkleri), `widgetBackground` zemin, 24 dp köşe, hap biçimli düğmeler. Süre yazısının rengi `widget_text` (`values` / `values-night`) RemoteViews XML'inde; gece modu başlatıcı tarafından çözülür. Renk ayarı değişince widget bir kez yeniden çizilir.
 - **Sınırlama:** Glance `cornerRadius` yalnızca Android 12+'da uygulanır; Android 6–11'de widget ve düğme köşeleri düz görünür (Adımsayar'da da aynı).

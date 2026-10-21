@@ -70,15 +70,19 @@ class StopwatchService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
         scope.launch {
-            val state = when (action) {
-                StopwatchActions.ACTION_RESUME -> repository.start()
-                StopwatchActions.ACTION_PAUSE -> repository.pause()
-                StopwatchActions.ACTION_LAP -> repository.lap()
-                StopwatchActions.ACTION_RESET -> repository.reset()
-                else -> repository.load()
+            try {
+                val state = when (action) {
+                    StopwatchActions.ACTION_RESUME -> repository.start()
+                    StopwatchActions.ACTION_PAUSE -> repository.pause()
+                    StopwatchActions.ACTION_LAP -> repository.lap()
+                    StopwatchActions.ACTION_RESET -> repository.reset()
+                    else -> repository.load()
+                }
+                refreshWidget()
+                render(state, startId)
+            } catch (e: Exception) {
+                stop(startId)
             }
-            refreshWidget()
-            render(state, startId)
         }
         return START_STICKY
     }
@@ -132,7 +136,7 @@ class StopwatchService : Service() {
 
     private fun refreshWidget() {
         val context = applicationContext
-        CoroutineScope(Dispatchers.Default).launch { StopwatchWidget().updateAll(context) }
+        scope.launch(Dispatchers.IO) { StopwatchWidget().updateAll(context) }
     }
 
     override fun onDestroy() {

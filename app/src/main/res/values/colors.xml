@@ -2,7 +2,7 @@
 <resources>
     <color name="launcher_background">#FF2E7D32</color>
     <color name="launcher_foreground">#FFFFFFFF</color>
-    <color name="window_background">#FF1B1C1A</color>
+    <color name="window_background">#FFF2F2EE</color>
     <color name="widget_preview_background">#FF262825</color>
     <color name="widget_preview_accent">#FF81C784</color>
     <color name="widget_preview_secondary">#FF33352F</color>

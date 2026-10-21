@@ -23,6 +23,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.widget.Chronometer
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
@@ -37,6 +38,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -44,6 +47,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -102,9 +106,13 @@ fun rememberFrameClock(state: StopwatchState, enabled: Boolean): Long {
     val now by produceState(SystemClock.elapsedRealtime(), state, enabled) {
         value = SystemClock.elapsedRealtime()
         if (enabled && state.isRunning) {
+            var lastFrame = 0L
             while (isActive) {
-                withFrameMillis { }
-                value = SystemClock.elapsedRealtime()
+                val frame = withFrameMillis { it }
+                if (frame - lastFrame >= FRAME_INTERVAL_MS) {
+                    lastFrame = frame
+                    value = SystemClock.elapsedRealtime()
+                }
             }
         }
     }
@@ -251,14 +259,19 @@ fun LapList(laps: List<Long>, modifier: Modifier = Modifier, header: (@Composabl
     val splits = laps.mapIndexed { index, total -> total - (laps.getOrNull(index - 1) ?: 0L) }
     val fastest = if (splits.size >= 3) splits.indexOf(splits.min()) else -1
     val slowest = if (splits.size >= 3) splits.indexOf(splits.max()) else -1
-    val rows = laps.indices.reversed()
-    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    val rows = laps.indices.reversed().toList()
+    LazyColumn(modifier = modifier) {
         if (header != null) item(key = "header") { header() }
         if (laps.isNotEmpty()) {
-            item(key = "summary") { LapSummary(splits, fastest) }
-            item(key = "laps") {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                    Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
+            item(key = "summary") {
+                Box(Modifier.padding(bottom = 12.dp)) { LapSummary(splits, fastest) }
+            }
+            item(key = "laps_title") {
+                Card(
+                    shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                ) {
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -283,22 +296,32 @@ fun LapList(laps: List<Long>, modifier: Modifier = Modifier, header: (@Composabl
                             modifier = Modifier.padding(horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.outlineVariant,
                         )
-                        rows.forEach { index ->
-                            val color = when (index) {
-                                fastest -> MaterialTheme.colorScheme.primary
-                                slowest -> MaterialTheme.colorScheme.error
-                                else -> MaterialTheme.colorScheme.onSurface
-                            }
-                            LapRow(
-                                first = stringResource(R.string.lap_label, index + 1),
-                                second = formatLap(splits[index]),
-                                third = formatLap(laps[index]),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = color,
-                                bold = index == fastest,
-                            )
-                        }
                     }
+                }
+            }
+            items(rows, key = { "lap_$it" }) { index ->
+                val color = when (index) {
+                    fastest -> MaterialTheme.colorScheme.primary
+                    slowest -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+                val last = index == rows.last()
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = if (last) {
+                        RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
+                    } else {
+                        RoundedCornerShape(0.dp)
+                    },
+                ) {
+                    LapRow(
+                        first = stringResource(R.string.lap_label, index + 1),
+                        second = formatLap(splits[index]),
+                        third = formatLap(laps[index]),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = color,
+                        bold = index == fastest,
+                    )
                 }
             }
         }
@@ -390,6 +413,7 @@ fun formatLap(ms: Long): String =
 private const val TIME_TEXT_DP = 56f
 private const val MINUTE_MS = 60_000L
 private const val CENTIS_SCALE = 0.55f
+private const val FRAME_INTERVAL_MS = 16L
 
 @Preview(showBackground = true)
 @Composable

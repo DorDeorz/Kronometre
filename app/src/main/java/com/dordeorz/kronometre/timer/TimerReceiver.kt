@@ -15,7 +15,9 @@ class TimerReceiver : BroadcastReceiver() {
         val pending = goAsync()
         scope.launch {
             try {
-                TimerController.handle(context, action)
+                TimerController.handle(context.applicationContext, action)
+            } catch (e: Exception) {
+                // A corrupt or temporarily unavailable store must not crash the receiver.
             } finally {
                 pending.finish()
             }

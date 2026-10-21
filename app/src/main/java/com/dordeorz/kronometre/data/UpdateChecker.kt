@@ -26,6 +26,7 @@ object UpdateChecker {
             connection.connectTimeout = TIMEOUT_MS
             connection.readTimeout = TIMEOUT_MS
             connection.setRequestProperty("Accept", "application/vnd.github+json")
+            connection.setRequestProperty("User-Agent", "Kronometre-Android")
             try {
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext UpdateStatus.Failed
                 val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })

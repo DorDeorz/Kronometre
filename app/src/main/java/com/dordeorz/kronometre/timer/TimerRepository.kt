@@ -1,10 +1,15 @@
 package com.dordeorz.kronometre.timer
 
 import android.content.Context
+import android.os.Build
 import android.os.SystemClock
+import android.provider.Settings
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -15,10 +20,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-private val Context.timerDataStore: DataStore<Preferences> by preferencesDataStore(name = "timer")
+private val Context.timerDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "timer",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+)
 
 class TimerRepository(
     private val dataStore: DataStore<Preferences>,
+    private val bootCount: () -> Int = { 0 },
     private val clock: () -> Long = SystemClock::elapsedRealtime,
 ) {
     private val mutex = Mutex()
@@ -32,6 +41,8 @@ class TimerRepository(
         _state.value
     }
 
+    suspend fun start(durationMs: Long): TimerState = update { state, now -> state.start(durationMs, now) }.second
+
     suspend fun update(transform: (TimerState, Long) -> TimerState): Pair<TimerState, TimerState> =
         mutex.withLock {
             ensureLoaded()
@@ -44,6 +55,17 @@ class TimerRepository(
             old to new
         }
 
+    suspend fun onBoot(): TimerState = mutex.withLock {
+        ensureLoaded()
+        val old = _state.value
+        val new = if (old.status == TimerStatus.Running || old.status == TimerStatus.Ringing) old.cancel() else old
+        if (new != old) {
+            _state.value = new
+            write(new)
+        }
+        new
+    }
+
     private suspend fun ensureLoaded() {
         if (loaded) return
         val prefs = dataStore.data.first()
@@ -53,19 +75,27 @@ class TimerRepository(
             remainingMs = prefs[REMAINING] ?: 0L,
             endsAtElapsedRealtime = prefs[ENDS_AT] ?: 0L,
         )
-        val rebooted = stored.status == TimerStatus.Running && stored.endsAtElapsedRealtime - clock() > stored.durationMs
-        val restored = if (rebooted) stored.cancel() else stored
-        if (restored != stored) write(restored)
+        val storedBoot = prefs[BOOT_COUNT]
+        val currentBoot = bootCount()
+        val rebooted = if (storedBoot == null) {
+            stored.status == TimerStatus.Running && stored.endsAtElapsedRealtime - clock() > stored.durationMs
+        } else {
+            storedBoot != currentBoot
+        }
+        val restored = if (stored.status == TimerStatus.Running && rebooted) stored.cancel() else stored
+        if (restored != stored || storedBoot != currentBoot) write(restored)
         _state.value = restored
         loaded = true
     }
 
     private suspend fun write(state: TimerState) {
+        val currentBoot = bootCount()
         dataStore.edit { prefs ->
             prefs[STATUS] = state.status.name
             prefs[DURATION] = state.durationMs
             prefs[REMAINING] = state.remainingMs
             prefs[ENDS_AT] = state.endsAtElapsedRealtime
+            prefs[BOOT_COUNT] = currentBoot
         }
     }
 
@@ -74,13 +104,25 @@ class TimerRepository(
         private val DURATION = longPreferencesKey("duration_ms")
         private val REMAINING = longPreferencesKey("remaining_ms")
         private val ENDS_AT = longPreferencesKey("ends_at")
+        private val BOOT_COUNT = intPreferencesKey("boot_count")
 
         @Volatile
         private var instance: TimerRepository? = null
 
         fun get(context: Context): TimerRepository =
             instance ?: synchronized(this) {
-                instance ?: TimerRepository(context.applicationContext.timerDataStore).also { instance = it }
+                val app = context.applicationContext
+                instance ?: TimerRepository(
+                    dataStore = app.timerDataStore,
+                    bootCount = { readBootCount(app) },
+                ).also { instance = it }
+            }
+
+        private fun readBootCount(context: Context): Int =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, 0)
+            } else {
+                0
             }
     }
 }

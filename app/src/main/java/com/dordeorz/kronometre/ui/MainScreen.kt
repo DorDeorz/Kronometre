@@ -1,5 +1,9 @@
 package com.dordeorz.kronometre.ui
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,36 +21,52 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dordeorz.kronometre.R
 import com.dordeorz.kronometre.timer.TimerController
+import com.dordeorz.kronometre.ui.oem.BatteryOptimizationHelper
 
 @Composable
 fun MainScreen(
     stopwatchViewModel: StopwatchViewModel,
     timerViewModel: TimerViewModel,
     showCentis: Boolean,
+    oemHelpDismissed: Boolean,
     selectedTab: Int,
     onSelectTab: (Int) -> Unit,
     onRunningChanged: (Boolean) -> Unit,
     onOpenSettings: () -> Unit,
+    onDismissOemHelp: () -> Unit,
 ) {
     val context = LocalContext.current
     val timerState by timerViewModel.state.collectAsStateWithLifecycle()
     var exactAllowed by remember { mutableStateOf(true) }
+    var timerPermissionAsked by rememberSaveable { mutableStateOf(false) }
+    val timerPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     LifecycleResumeEffect(Unit) {
         exactAllowed = TimerController.canScheduleExact(context)
         onPauseOrDispose { }
+    }
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == 1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !timerPermissionAsked &&
+            !NotificationManagerCompat.from(context).areNotificationsEnabled()
+        ) {
+            timerPermissionAsked = true
+            timerPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
     val tabs = listOf(
         R.string.tab_stopwatch to R.drawable.ic_stopwatch,
@@ -86,7 +106,13 @@ fun MainScreen(
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (selectedTab == 0) {
-                StopwatchScreen(viewModel = stopwatchViewModel, showCentis = showCentis, onRunningChanged = onRunningChanged)
+                StopwatchScreen(
+                    viewModel = stopwatchViewModel,
+                    showCentis = showCentis,
+                    oemHelpDismissed = oemHelpDismissed,
+                    onRunningChanged = onRunningChanged,
+                    onDismissOemHelp = onDismissOemHelp,
+                )
             } else {
                 TimerScreen(
                     state = timerState,
@@ -95,6 +121,7 @@ fun MainScreen(
                     onToggle = timerViewModel::toggle,
                     onAddMinute = timerViewModel::addMinute,
                     onCancel = timerViewModel::cancel,
+                    onOpenExactAlarmSettings = { BatteryOptimizationHelper.openExactAlarmSettings(context) },
                 )
             }
         }
