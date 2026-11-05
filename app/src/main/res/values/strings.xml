@@ -17,7 +17,9 @@
 
     <string name="channel_name">Kronometre</string>
     <string name="channel_description">Çalışan kronometre süresi ve kontrolleri</string>
-    <string name="notification_title">Kronometre çalışıyor</string>
+    <string name="notification_title">Kronometre</string>
+    <string name="notification_text_running">Çalışıyor</string>
+    <string name="notification_text_paused">%1$s · Duraklatıldı</string>
     <string name="notification_title_paused">Kronometre duraklatıldı</string>
     <string name="notification_laps">%1$d tur</string>
     <string name="notification_minutes_hint">sa:dk · ekran kapalıyken dakikada bir güncellenir</string>

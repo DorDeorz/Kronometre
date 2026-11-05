@@ -44,6 +44,7 @@ class StopwatchNotifier(private val context: Context) {
 
     private fun builder(state: StopwatchState, interactive: Boolean): NotificationCompat.Builder {
         val elapsed = state.currentElapsedMs()
+        val startedAtWallClock = System.currentTimeMillis() - elapsed
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stopwatch)
             .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
@@ -52,23 +53,26 @@ class StopwatchNotifier(private val context: Context) {
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setLocalOnly(true)
-            .setShowWhen(false)
-            .setUsesChronometer(false)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setContentIntent(openAppIntent())
         val views = timeViews(state, interactive, elapsed)
         builder.setCustomContentView(views).setCustomBigContentView(views)
         if (!state.isRunning) {
             return builder
-                .setContentTitle(DateUtils.formatElapsedTime(elapsed / 1000))
-                .setContentText(context.getString(R.string.notification_title_paused))
+                .setShowWhen(false)
+                .setUsesChronometer(false)
+                .setContentTitle(context.getString(R.string.notification_title))
+                .setContentText(context.getString(R.string.notification_text_paused, DateUtils.formatElapsedTime(elapsed / 1000)))
                 .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_DEFERRED)
                 .addAction(R.drawable.ic_play, context.getString(R.string.action_resume), serviceIntent(StopwatchActions.ACTION_RESUME))
                 .addAction(R.drawable.ic_reset, context.getString(R.string.action_reset), serviceIntent(StopwatchActions.ACTION_RESET))
         }
         return builder
+            .setWhen(startedAtWallClock)
+            .setUsesChronometer(true)
+            .setShowWhen(true)
             .setContentTitle(context.getString(R.string.notification_title))
-            .setContentText(lapText(state))
+            .setContentText(runningText(state))
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .addAction(R.drawable.ic_pause, context.getString(R.string.action_pause), serviceIntent(StopwatchActions.ACTION_PAUSE))
             .addAction(R.drawable.ic_lap, context.getString(R.string.action_lap), serviceIntent(StopwatchActions.ACTION_LAP))
@@ -92,6 +96,11 @@ class StopwatchNotifier(private val context: Context) {
         views.setTextViewText(R.id.notification_subtitle, subtitle)
         views.setViewVisibility(R.id.notification_subtitle, if (subtitle == null) View.GONE else View.VISIBLE)
         return views
+    }
+
+    private fun runningText(state: StopwatchState): String {
+        val running = context.getString(R.string.notification_text_running)
+        return lapText(state)?.let { "$running · $it" } ?: running
     }
 
     private fun lapText(state: StopwatchState): String? =
