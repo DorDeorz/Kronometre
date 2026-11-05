@@ -70,7 +70,6 @@ class StopwatchNotifier(private val context: Context) {
         return builder
             .setWhen(startedAtWallClock)
             .setUsesChronometer(true)
-            .setChronometerCountDown(false)
             .setShowWhen(true)
             .setContentTitle(context.getString(R.string.notification_title))
             .setContentText(runningText(state))
